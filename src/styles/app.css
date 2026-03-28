@@ -21,6 +21,24 @@ body {
   color: var(--ink);
 }
 
+.skip-button {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 20;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--surface-dark);
+  border-radius: 14px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  transform: translateY(-140%);
+  transition: transform 160ms ease;
+}
+
+.skip-button:focus-visible {
+  transform: translateY(0);
+}
+
 .boot-screen {
   display: grid;
   min-height: 100vh;
@@ -83,10 +101,14 @@ body {
 }
 
 .nav-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0.85rem 1rem;
   border: 1px solid rgba(247, 243, 230, 0.12);
   border-radius: 14px;
   text-decoration: none;
+  color: inherit;
   transition:
     transform 160ms ease,
     background 160ms ease,
@@ -99,9 +121,54 @@ body {
   background: rgba(247, 243, 230, 0.08);
 }
 
+.nav-list__shortcut {
+  color: rgba(247, 243, 230, 0.62);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .nav-list__item--active {
   border-color: rgba(209, 121, 49, 0.58);
   background: rgba(209, 121, 49, 0.14);
+}
+
+.shortcut-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(247, 243, 230, 0.12);
+  border-radius: 18px;
+  background: rgba(247, 243, 230, 0.06);
+}
+
+.shortcut-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.shortcut-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  color: rgba(247, 243, 230, 0.9);
+}
+
+.shortcut-list kbd {
+  display: inline-flex;
+  min-width: 7.5rem;
+  justify-content: center;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(247, 243, 230, 0.16);
+  border-radius: 999px;
+  background: rgba(247, 243, 230, 0.08);
+  color: #f7f3e6;
+  font-family: "IBM Plex Mono", "Cascadia Code", "Consolas", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .profile-card,
@@ -197,6 +264,20 @@ body {
   opacity: 0.72;
 }
 
+.lesson-card--earned {
+  border-color: rgba(47, 99, 90, 0.34);
+  background:
+    linear-gradient(135deg, rgba(47, 99, 90, 0.12), rgba(209, 121, 49, 0.1)),
+    var(--surface);
+}
+
+.lesson-card:focus-within {
+  border-color: rgba(209, 121, 49, 0.48);
+  box-shadow:
+    var(--shadow),
+    0 0 0 3px rgba(209, 121, 49, 0.12);
+}
+
 .lesson-card h3 {
   margin: 0;
 }
@@ -241,6 +322,16 @@ body {
 .panel-link:focus-visible {
   transform: translateY(-2px);
   opacity: 0.94;
+}
+
+.panel-link--accent {
+  background: linear-gradient(135deg, var(--accent), #e3a14b);
+  color: #1a2528;
+}
+
+.panel-link--accent:hover,
+.panel-link--accent:focus-visible {
+  opacity: 1;
 }
 
 .capture-surface {
@@ -320,6 +411,23 @@ body {
 .lesson-helper {
   margin: 0;
   color: var(--muted);
+}
+
+.guide-panel {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(47, 99, 90, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(47, 99, 90, 0.12), rgba(209, 121, 49, 0.12)),
+    rgba(255, 255, 255, 0.58);
+}
+
+.guide-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .feedback-banner {
@@ -476,6 +584,10 @@ body {
 .panel-button:focus-visible {
   transform: translateY(-2px);
   border-color: rgba(209, 121, 49, 0.58);
+}
+
+.app-shell__content:focus {
+  outline: none;
 }
 
 .status-line {

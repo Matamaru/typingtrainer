@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
 import { buildAdaptiveLessonPlan } from "../../core/analysis/adaptive-drills";
@@ -16,6 +17,8 @@ import {
   type LessonRunState,
 } from "../../core/trainer/engine";
 import type { SessionSummary } from "../../shared/types/domain";
+import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
+import { FingerGuidePanel } from "../../shared/ui/FingerGuidePanel";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
 
@@ -48,7 +51,10 @@ function formatDuration(durationMs: number) {
 export function AdaptivePracticePage() {
   const profile = useAppStore((state) => state.activeProfile);
   const strictness = profile?.preferences.strictness ?? "strict";
+  const showFingerGuides = profile?.preferences.showFingerGuides ?? true;
   const captureSurfaceRef = useRef<HTMLTextAreaElement | null>(null);
+  const restartButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nextSessionButtonRef = useRef<HTMLButtonElement | null>(null);
   const captureEngineRef = useRef(new KeyboardCaptureEngine());
   const [summaries, setSummaries] = useState<SessionSummary[]>([]);
   const [generationSeed, setGenerationSeed] = useState(0);
@@ -83,6 +89,16 @@ export function AdaptivePracticePage() {
   useEffect(() => {
     captureSurfaceRef.current?.focus();
   }, [runState?.session.id]);
+
+  useEffect(() => {
+    if (!runState || getLessonRunStatus(runState) !== "completed") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      nextSessionButtonRef.current?.focus();
+    });
+  }, [runState]);
 
   useEffect(() => {
     if (!runState) {
@@ -143,6 +159,16 @@ export function AdaptivePracticePage() {
   }
 
   function handleLessonKeyEvent(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Escape") {
+      event.currentTarget.blur();
+      restartButtonRef.current?.focus();
+      return;
+    }
+
+    if (shouldReleaseKeyboardCapture(event.key)) {
+      return;
+    }
+
     event.preventDefault();
 
     if (!runState) {
@@ -165,6 +191,44 @@ export function AdaptivePracticePage() {
     setRunState((current) => (current ? processLessonKeystroke(current, keystroke) : current));
   }
 
+  useEffect(() => {
+    function handleAdaptiveShortcut(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        !event.altKey ||
+        !event.shiftKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isEditableKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.code === "KeyT") {
+        event.preventDefault();
+        captureSurfaceRef.current?.focus();
+        return;
+      }
+
+      if (event.code === "KeyR") {
+        event.preventDefault();
+        restartSession();
+        return;
+      }
+
+      if (event.code === "KeyN" || event.code === "KeyG") {
+        event.preventDefault();
+        void generateNextSession();
+      }
+    }
+
+    window.addEventListener("keydown", handleAdaptiveShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleAdaptiveShortcut);
+    };
+  });
+
   if (!profile || !runState) {
     return (
       <div className="page-grid">
@@ -178,6 +242,10 @@ export function AdaptivePracticePage() {
   const status = getLessonRunStatus(runState);
   const currentPromptText = getCurrentPromptText(runState);
   const promptNumber = Math.min(runState.promptIndex + 1, adaptivePlan.lesson.prompts.length);
+  const adaptiveHelperText =
+    adaptivePlan.lesson.kind === "code"
+      ? "Focus this panel and type the generated code-shaped prompt. Press Tab to reach the controls or Escape to leave capture, then regenerate after completion to use the newest saved syntax data."
+      : "Focus this panel and type the generated prompt. Press Tab to reach the controls or Escape to leave capture, then move on to the next adaptive session from the action row.";
 
   return (
     <div className="page-grid">
@@ -249,23 +317,39 @@ export function AdaptivePracticePage() {
           <div className="lesson-prompt" aria-live="polite">
             {renderPrompt(currentPromptText, runState.currentPromptInput, runState.cursorIndex)}
           </div>
-          <p className="lesson-helper">
-            Focus this panel and type the generated prompt. Regenerate after completion to use the
-            newest saved session data.
-          </p>
+          <p className="lesson-helper">{adaptiveHelperText}</p>
         </KeyboardCaptureSurface>
 
         <div className={`feedback-banner feedback-banner--${runState.lastFeedback.tone}`}>
           {runState.lastFeedback.message}
         </div>
 
+        {showFingerGuides ? (
+          <FingerGuidePanel promptText={currentPromptText} cursorIndex={runState.cursorIndex} />
+        ) : null}
+
         <div className="button-row">
-          <button className="panel-button" type="button" onClick={restartSession}>
+          <button
+            ref={restartButtonRef}
+            className="panel-button"
+            type="button"
+            aria-keyshortcuts="Alt+Shift+R"
+            onClick={restartSession}
+          >
             Restart this session
           </button>
-          <button className="panel-button" type="button" onClick={() => void generateNextSession()}>
-            Generate next session
+          <button
+            ref={nextSessionButtonRef}
+            className="panel-button"
+            type="button"
+            aria-keyshortcuts="Alt+Shift+N Alt+Shift+G"
+            onClick={() => void generateNextSession()}
+          >
+            Next adaptive session
           </button>
+          <Link className="panel-link" to="/lessons" aria-keyshortcuts="Alt+Shift+L">
+            Back to lessons
+          </Link>
         </div>
       </PageSection>
 

@@ -111,6 +111,31 @@ describe("processLessonKeystroke", () => {
     expect(nextState.mistakes[0]?.tags ?? []).not.toContain("likely-wrong-finger");
   });
 
+  it("tags paired-delimiter slips inside code lessons", () => {
+    const state = createLessonRunState(
+      buildLesson({
+        mode: "coding",
+        kind: "code",
+        prompts: [{ id: "p1", text: ")" }],
+      }),
+      "strict",
+      "profile-1",
+    );
+
+    const nextState = processLessonKeystroke(
+      state,
+      buildKeystroke({
+        key: "]",
+        code: "BracketRight",
+        shiftPressed: true,
+        shiftSide: "left",
+      }),
+    );
+
+    expect(nextState.mistakes[0]?.type).toBe("wrong-key");
+    expect(nextState.mistakes[0]?.tags).toContain("delimiter-mismatch");
+  });
+
   it("enforces opposite-hand shift for technique lessons in strict mode", () => {
     const state = createLessonRunState(buildLesson(), "strict", "profile-1");
 
@@ -268,5 +293,39 @@ describe("buildSessionSummary", () => {
       count: 1,
     });
     expect(summary?.mistakeKeyCounts).toHaveLength(0);
+  });
+
+  it("counts delimiter mismatch tags for completed code sessions", () => {
+    const lesson = buildLesson({
+      mode: "coding",
+      kind: "code",
+      prompts: [{ id: "p1", text: ")" }],
+    });
+    const state = createLessonRunState(lesson, "strict", "profile-1");
+    const completed = processLessonKeystroke(
+      state,
+      buildKeystroke({
+        key: "]",
+        code: "BracketRight",
+        shiftPressed: true,
+        shiftSide: "left",
+      }),
+    );
+
+    const summary = buildSessionSummary({
+      ...completed,
+      session: {
+        ...completed.session,
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      },
+    });
+
+    expect(summary?.mistakeCounts["delimiter-mismatch"]).toBe(1);
+    expect(summary?.substitutionCounts[0]).toMatchObject({
+      expectedCode: "Digit0",
+      actualCode: "BracketRight",
+      count: 1,
+    });
   });
 });

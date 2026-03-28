@@ -2,12 +2,13 @@ import type {
   FingerZone,
   FingerZoneCount,
   KeyCount,
+  KeySubstitutionCount,
   Lesson,
   Prompt,
   SessionSummary,
 } from "../../shared/types/domain";
 
-type AdaptiveFocusType = "shift-side" | "timing" | "key" | "finger-zone" | "symbols";
+type AdaptiveFocusType = "shift-side" | "timing" | "key" | "finger-zone" | "symbols" | "code-syntax";
 
 type AccuracyEntry = {
   label: string;
@@ -59,6 +60,10 @@ const symbolPromptSets: Record<string, string[]> = {
   ",": ["left, right, center", "Pin(15, Pin.IN, Pin.PULL_UP)", "x, y, z"],
   ".": ["value.count", "ready.then", "module.name"],
   "'": ["'a' 'b' 'c'", "state = 'on';", "char c = 'x';"],
+  "(": ["if (ready) { start(); }", "wait_for_frame(sync_count);", "value = read_pin(state);"],
+  ")": ["if (ready) { start(); }", "wait_for_frame(sync_count);", "value = read_pin(state);"],
+  "{": ["while (ready) { tick(); }", "if (error) { reset(); }", "for (;;) { poll(); }"],
+  "}": ["while (ready) { tick(); }", "if (error) { reset(); }", "for (;;) { poll(); }"],
 };
 
 const fingerZoneAnchorKeys: Record<FingerZone, string[]> = {
@@ -170,6 +175,28 @@ function buildPromptBlock(prefix: string, prompts: string[]) {
   }));
 }
 
+function aggregateSubstitutionCounts(entries: KeySubstitutionCount[]) {
+  const counts = new Map<
+    string,
+    { expectedCode: string; expectedLabel: string; actualCode: string; actualLabel: string; count: number }
+  >();
+
+  for (const entry of entries) {
+    const key = `${entry.expectedCode}->${entry.actualCode}`;
+    const current = counts.get(key);
+
+    counts.set(key, {
+      expectedCode: entry.expectedCode,
+      expectedLabel: entry.expectedLabel,
+      actualCode: entry.actualCode,
+      actualLabel: entry.actualLabel,
+      count: (current?.count ?? 0) + entry.count,
+    });
+  }
+
+  return [...counts.values()].sort((left, right) => right.count - left.count);
+}
+
 function buildShiftFocusBlock(seed: number): AdaptiveFocusBlock {
   const prompts = rotate(
     [
@@ -230,6 +257,34 @@ function buildSymbolFocusBlock(key: AccuracyEntry, seed: number): AdaptiveFocusB
     reason: `${key.label} is showing up as a weak target key. These short code-shaped prompts slow it down and make the reach deliberate.`,
     prompts: buildPromptBlock(`adaptive-symbol-${key.label}`, prompts),
     tags: ["symbols", "coding", "accuracy"],
+  };
+}
+
+function buildCodeSyntaxFocusBlock(
+  substitution:
+    | {
+        expectedLabel: string;
+        actualLabel: string;
+        count: number;
+      }
+    | undefined,
+  delimiterMismatchCount: number,
+  seed: number,
+): AdaptiveFocusBlock {
+  const focusSymbol =
+    substitution && isSymbolLike(substitution.expectedLabel) ? substitution.expectedLabel : "(";
+  const fallbackPrompts = symbolPromptSets[focusSymbol] ?? symbolPromptSets["("] ?? [];
+  const prompts = rotate(fallbackPrompts, seed);
+  const reason = substitution
+    ? `Recent code-shaped mistakes keep swapping ${substitution.expectedLabel} for ${substitution.actualLabel}. This block slows the syntax down and rebuilds the correct pattern.`
+    : `${delimiterMismatchCount} paired-delimiter mistakes were detected, so this block rebuilds bracket and brace control with short realistic snippets.`;
+
+  return {
+    type: "code-syntax",
+    title: `Repair syntax around ${focusSymbol}`,
+    reason,
+    prompts: buildPromptBlock(`adaptive-code-${focusSymbol}`, prompts),
+    tags: ["coding", "syntax", focusSymbol],
   };
 }
 
@@ -295,6 +350,10 @@ export function buildAdaptiveLessonPlan(summaries: SessionSummary[], seed = 0): 
     (sum, summary) => sum + summary.timingHesitationCount,
     0,
   );
+  const delimiterMismatchCount = summaries.reduce(
+    (sum, summary) => sum + (summary.mistakeCounts["delimiter-mismatch"] ?? 0),
+    0,
+  );
 
   const expectedKeyCounts = aggregateKeyCounts(
     summaries.flatMap((summary) => summary.expectedKeyCounts),
@@ -323,6 +382,9 @@ export function buildAdaptiveLessonPlan(summaries: SessionSummary[], seed = 0): 
 
       return counts;
     }, new Map());
+  const topSymbolSubstitution = aggregateSubstitutionCounts(
+    summaries.flatMap((summary) => summary.substitutionCounts),
+  ).find((entry) => isSymbolLike(entry.expectedLabel) || isSymbolLike(entry.actualLabel));
 
   const weakestKeys = buildAccuracyEntries(expectedKeyCounts, mistakeKeyCounts);
   const weakestFingerZones = buildFingerZoneAccuracyEntries(
@@ -351,6 +413,10 @@ export function buildAdaptiveLessonPlan(summaries: SessionSummary[], seed = 0): 
 
   if (timingHesitationCount > 0) {
     blocks.push(buildTimingFocusBlock(topHesitationKey, seed));
+  }
+
+  if (delimiterMismatchCount > 0 || topSymbolSubstitution) {
+    blocks.push(buildCodeSyntaxFocusBlock(topSymbolSubstitution, delimiterMismatchCount, seed));
   }
 
   const topWeakKey = weakestKeys[0];
@@ -383,7 +449,9 @@ export function buildAdaptiveLessonPlan(summaries: SessionSummary[], seed = 0): 
   const selectedBlocks = blocks.slice(0, 3);
   const prompts = selectedBlocks.flatMap((block) => block.prompts).slice(0, 12);
   const focusTitles = selectedBlocks.map((block) => block.title);
-  const kind = selectedBlocks.some((block) => block.type === "symbols") ? "code" : "technique";
+  const kind = selectedBlocks.some((block) => block.type === "symbols" || block.type === "code-syntax")
+    ? "code"
+    : "technique";
 
   return {
     lesson: {

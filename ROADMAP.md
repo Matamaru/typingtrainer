@@ -156,6 +156,7 @@ Current Phase 2 vertical slice:
 - stats pages read real stored session data
 - shift-side mistakes are detected for strict technique prompts
 - neighboring-key drift can be tagged as likely wrong-finger usage
+- code-shaped delimiter slips can be tagged as delimiter mismatches
 - common substitutions are tracked from expected-to-actual key swaps
 - timing hesitation is tracked from long pauses within prompts
 - stats pages expose recent progress and a target-key heatmap
@@ -181,7 +182,7 @@ Goal: create a very guided path for foundational touch typing.
 - [x] Modifier lessons
 - [x] English-first prose lessons
 - [x] German prose support
-- [ ] Wire finger-guide visibility into the lesson runner
+- [x] Wire finger-guide visibility into the lesson runner
 
 Exit criteria:
 
@@ -191,9 +192,7 @@ Exit criteria:
 
 Phase 3 status:
 
-- in progress
-- staged lesson ladder and prerequisite-based unlocking are implemented
-- finger-guide visibility still needs to be wired into the lesson runner
+- complete
 
 ## Phase 4: Adaptive Training
 
@@ -227,11 +226,11 @@ Goal: add code-shaped typing without losing the typing-first focus.
 - [x] Add C drill pack
 - [x] Add symbol and delimiter drills
 - [x] Add indentation drills
-- [ ] Add identifier and naming drills
+- [x] Add identifier and naming drills
 - [x] Add short realistic snippets
-- [ ] Add small full functions/programs
-- [ ] Add light concept prompts
-- [ ] Add adaptive code drills based on syntax-related typing mistakes
+- [x] Add small full functions/programs
+- [x] Add light concept prompts
+- [x] Add adaptive code drills based on syntax-related typing mistakes
 
 Exit criteria:
 
@@ -239,20 +238,33 @@ Exit criteria:
 - code drills improve symbol and syntax confidence
 - coding mode remains clearly subordinate to typing goals
 
+Phase 5 status:
+
+- complete
+
 ## Phase 6: Motivation Layer
 
 Goal: increase consistency without turning the app into a gimmick.
 
-- [ ] Add streak tracking
-- [ ] Add level progression
-- [ ] Add achievements
-- [ ] Add session goals for short and medium practice windows
-- [ ] Tune reward logic so accuracy is rewarded more than reckless speed
+- [x] Add streak tracking
+- [x] Add level progression
+- [x] Add achievements
+- [x] Add session goals for short and medium practice windows
+- [x] Tune reward logic so accuracy is rewarded more than reckless speed
 
 Exit criteria:
 
 - motivation features increase repeat usage
 - gamification does not encourage bad technique
+
+Phase 6 status:
+
+- complete
+- current implementation includes focus-point level progression, streaks, short/medium session goals, and a derived achievement wall
+
+Current next step:
+
+- Phase 7 polish around session transitions, correction clarity, and daily-use refinement
 
 ## Phase 7: Polish And Stability
 

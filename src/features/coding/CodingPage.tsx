@@ -9,8 +9,8 @@ export function CodingPage() {
       <PageSection eyebrow="coding teacher" title="Typing-first code practice">
         <p>
           The coding teacher is scaffolded as a training mode rather than a separate programming
-          course. The current packs focus on Python, MicroPython, and C syntax patterns that are
-          useful for symbol control and muscle memory.
+          course. The current packs focus on Python, MicroPython, and C syntax patterns, naming
+          rhythm, and small full functions that are useful for symbol control and muscle memory.
         </p>
         <div className="card-grid">
           {codingLessons.map((lesson) => (
@@ -22,6 +22,9 @@ export function CodingPage() {
               <h3>{lesson.title}</h3>
               <p>{lesson.summary}</p>
               <pre className="prompt-preview">{lesson.prompts[0]?.text}</pre>
+              {lesson.prompts[0]?.notes ? (
+                <p className="lesson-helper">{lesson.prompts[0].notes}</p>
+              ) : null}
             </article>
           ))}
         </div>

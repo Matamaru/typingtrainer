@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { KeyboardCaptureEngine } from "../../core/keyboard/capture-engine";
 import type { KeystrokeEvent } from "../../shared/types/domain";
+import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
 
@@ -27,7 +28,42 @@ export function FreePracticePage() {
     captureSurfaceRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    function handleFreePracticeShortcut(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        !event.altKey ||
+        !event.shiftKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isEditableKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.code === "KeyT") {
+        event.preventDefault();
+        captureSurfaceRef.current?.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleFreePracticeShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleFreePracticeShortcut);
+    };
+  }, []);
+
   function pushCapturedEvent(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Escape") {
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (shouldReleaseKeyboardCapture(event.key)) {
+      return;
+    }
+
     event.preventDefault();
 
     const capturedEvent = engineRef.current.processEvent({
@@ -64,7 +100,8 @@ export function FreePracticePage() {
           onKeyDown={pushCapturedEvent}
           onKeyUp={pushCapturedEvent}
         >
-          Focused capture panel. Type here without looking down.
+          Focused capture panel. Type here without looking down. Press Tab to leave the capture
+          area or Escape to blur it.
         </KeyboardCaptureSurface>
       </PageSection>
 

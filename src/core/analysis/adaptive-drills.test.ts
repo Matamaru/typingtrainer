@@ -84,4 +84,33 @@ describe("buildAdaptiveLessonPlan", () => {
     expect(plan.blocks.some((block) => block.type === "finger-zone")).toBe(true);
     expect(plan.lesson.summary).toContain("Reinforce target key");
   });
+
+  it("generates code-shaped syntax drills from stored symbol substitutions", () => {
+    const plan = buildAdaptiveLessonPlan(
+      [
+        buildSummary({
+          lessonId: "c-register-rhythm",
+          lessonTitle: "C Register Rhythm",
+          mode: "coding",
+          substitutionCounts: [
+            {
+              expectedCode: "BracketRight",
+              expectedLabel: "]",
+              actualCode: "Digit0",
+              actualLabel: ")",
+              count: 3,
+            },
+          ],
+          mistakeCounts: { "delimiter-mismatch": 3 },
+        }),
+      ],
+      0,
+    );
+
+    expect(plan.lesson.kind).toBe("code");
+    const codeSyntaxBlock = plan.blocks.find((block) => block.type === "code-syntax");
+
+    expect(codeSyntaxBlock).toBeDefined();
+    expect(codeSyntaxBlock?.reason).toContain("swapping");
+  });
 });

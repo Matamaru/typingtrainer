@@ -6,15 +6,17 @@ This project is being built first for personal use, but the goal is to make it c
 
 ## Status
 
-Current release: `v0.2.0`
+Current release: `v0.2.1`
 
 What is working now:
 
 - guided browser-based lessons with real keystroke scoring
 - adaptive practice generated from stored weakness data
+- keyboard-only lesson and adaptive workflows, with matching mouse support still intact
 - local profiles and local session history
 - stats for weak keys, finger zones, substitutions, timing hesitation, and heatmaps
-- staged beginner lesson ladder plus coding crossover packs
+- streaks, focus-point progression, session goals, and derived achievements from stored session history
+- staged beginner lesson ladder plus coding crossover packs with full-function drills and syntax-aware adaptive recovery
 
 Primary docs:
 
@@ -34,6 +36,13 @@ Useful commands:
 - `npm run test:run`
 - `npm run build`
 - `npm run test:e2e`
+
+Keyboard-first notes:
+
+- `Tab` moves between controls and leaves typing capture surfaces
+- `Escape` leaves typing capture
+- `Alt+Shift+1-7` jumps across primary pages
+- lesson and adaptive runners expose their main actions through keyboard shortcuts and predictable focus order
 
 Routing note:
 
@@ -166,6 +175,7 @@ Current Phase 2 vertical slice:
 - live accuracy and WPM
 - wrong-key and wrong-shift-side classification
 - likely-wrong-finger heuristics for neighboring-key drift
+- delimiter-mismatch tagging for code-shaped syntax slips
 - local session summary persistence
 - stats pages backed by stored session data
 - target-key and target-finger analytics derived from stored session summaries
@@ -256,6 +266,8 @@ The guided path is now staged and ordered:
 - Stage 4: English-first prose carryover, then German support
 - coding crossover lessons unlock after the core technique path
 
+When finger guidance is enabled in settings, guided and adaptive runners show the current target key, finger, row, and Shift hint inline.
+
 ### 2. Adaptive Training
 
 The trainer analyzes recurring mistakes and generates targeted drills based on:
@@ -309,6 +321,14 @@ Its role is to improve comfort and accuracy with code-shaped typing.
 - adaptive code drills based on typing mistakes
 - light concept prompts that support meaningful typing
 
+Current implementation status:
+
+- syntax, delimiter, and indentation drills are implemented
+- identifier and naming drills are implemented
+- small full-function lessons are implemented in Python, MicroPython, and C
+- lightweight concept notes are shown inline with code prompts
+- adaptive code drill generation is implemented for symbol substitutions and delimiter drift
+
 ### V1 Coding Teacher Does Not Include
 
 - code execution
@@ -325,9 +345,16 @@ V1 includes:
 
 - streaks
 - level progression
-- achievements
+- derived achievements
 
 These systems should reinforce disciplined repetition, not reward sloppy speed.
+
+Current implementation status:
+
+- level progression is based on focus points earned from clean accurate sessions
+- current and best streaks are derived from calendar-day practice history
+- short and medium session-goal cards are shown on the dashboard and stats page
+- achievements are derived from guided, adaptive, coding, consistency, and clean-technique milestones
 
 ## Storage Model
 

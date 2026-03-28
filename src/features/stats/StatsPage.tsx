@@ -5,6 +5,15 @@ import {
   buildSessionInsights,
   type HeatmapEntry,
 } from "../../core/analysis/session-insights";
+import { buildAchievementSnapshot } from "../../core/gamification/achievements";
+import {
+  buildSessionGoals,
+  calculateLevelFromFocusPoints,
+  calculatePracticeStreaks,
+  calculateTodayFocusPoints,
+  calculateTotalFocusPoints,
+  focusPointsUntilNextLevel,
+} from "../../core/gamification/progression";
 import { listSessionSummaries } from "../../core/storage/session-summaries";
 import type { SessionSummary } from "../../shared/types/domain";
 import { PageSection } from "../../shared/ui/PageSection";
@@ -57,6 +66,19 @@ export function StatsPage() {
   }, [profile?.id]);
 
   const insights = useMemo(() => buildSessionInsights(summaries), [summaries]);
+  const streaks = useMemo(() => calculatePracticeStreaks(summaries), [summaries]);
+  const totalFocusPoints = useMemo(() => calculateTotalFocusPoints(summaries), [summaries]);
+  const currentLevel = useMemo(
+    () => calculateLevelFromFocusPoints(totalFocusPoints),
+    [totalFocusPoints],
+  );
+  const focusPointsToNextLevel = useMemo(
+    () => focusPointsUntilNextLevel(totalFocusPoints),
+    [totalFocusPoints],
+  );
+  const focusPointsToday = useMemo(() => calculateTodayFocusPoints(summaries), [summaries]);
+  const sessionGoals = useMemo(() => buildSessionGoals(summaries), [summaries]);
+  const achievements = useMemo(() => buildAchievementSnapshot(summaries), [summaries]);
 
   const heatmapRows = useMemo(() => {
     const rows = new Map<number, HeatmapEntry[]>();
@@ -102,6 +124,98 @@ export function StatsPage() {
             <span>Timing hesitation calls</span>
             <strong>{insights.timingHesitationCount}</strong>
           </article>
+          <article className="metric-card">
+            <span>Current streak</span>
+            <strong>{streaks.currentStreak} days</strong>
+          </article>
+          <article className="metric-card">
+            <span>Total focus points</span>
+            <strong>{totalFocusPoints}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Level</span>
+            <strong>{currentLevel}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Focus points today</span>
+            <strong>{focusPointsToday}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Achievements</span>
+            <strong>
+              {achievements.unlockedCount}/{achievements.totalCount}
+            </strong>
+          </article>
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="consistency" title="Consistency and momentum">
+        <div className="metric-grid">
+          <article className="metric-card">
+            <span>Best streak</span>
+            <strong>{streaks.bestStreak} days</strong>
+          </article>
+          <article className="metric-card">
+            <span>Active days</span>
+            <strong>{streaks.activeDays}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Last active day</span>
+            <strong>{streaks.lastActiveDay ?? "none yet"}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Points to next level</span>
+            <strong>{focusPointsToNextLevel}</strong>
+          </article>
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="goals" title="Short and medium goals">
+        <div className="card-grid">
+          {sessionGoals.map((goal) => (
+            <article
+              key={goal.id}
+              className={`lesson-card${goal.isComplete ? " lesson-card--earned" : ""}`}
+            >
+              <div className="lesson-card__header">
+                <span className="pill">{goal.id === "short-reset" ? "short" : "medium"}</span>
+                <span className={`pill${goal.isComplete ? " pill--soft" : ""}`}>
+                  {goal.isComplete ? "complete" : "in progress"}
+                </span>
+              </div>
+              <h3>{goal.title}</h3>
+              <p>{goal.description}</p>
+              <p>
+                {goal.current}/{goal.target} {goal.unit}
+              </p>
+            </article>
+          ))}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="achievements" title="Achievement wall">
+        <div className="card-grid">
+          {achievements.unlocked.map((achievement) => (
+            <article key={achievement.id} className="lesson-card lesson-card--earned">
+              <div className="lesson-card__header">
+                <span className="pill">{achievement.category}</span>
+                <span className="pill pill--soft">earned</span>
+              </div>
+              <h3>{achievement.title}</h3>
+              <p>{achievement.description}</p>
+              <p className="status-line">Unlocked {formatSessionDate(achievement.unlockedAt)}</p>
+            </article>
+          ))}
+          {achievements.locked.map((achievement) => (
+            <article key={achievement.id} className="lesson-card lesson-card--locked">
+              <div className="lesson-card__header">
+                <span className="pill">{achievement.category}</span>
+                <span className="pill">locked</span>
+              </div>
+              <h3>{achievement.title}</h3>
+              <p>{achievement.description}</p>
+            </article>
+          ))}
         </div>
       </PageSection>
 

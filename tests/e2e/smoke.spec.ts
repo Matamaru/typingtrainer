@@ -6,6 +6,8 @@ test("dashboard loads the scaffold shell", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "typingtrainer" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Phase 2 vertical slice" })).toBeVisible();
   await expect(page.getByText("Active profile:")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Technique achievements" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Session goals" })).toBeVisible();
   const guidedLessonLink = page.getByRole("link", { name: "Start a guided lesson" });
   await expect(guidedLessonLink).toBeVisible();
 
@@ -17,5 +19,7 @@ test("dashboard loads the scaffold shell", async ({ page }) => {
   await page.getByRole("link", { name: "Stats" }).click();
 
   await expect(page.getByRole("heading", { name: "Stored session summaries" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Achievement wall" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Short and medium goals" })).toBeVisible();
   await expect(page).toHaveURL(/#\/stats$/);
 });

@@ -26,6 +26,7 @@ import type {
 type FeedbackTone = "neutral" | "success" | "warning" | "error";
 
 const TIMING_HESITATION_THRESHOLD_MS = 1500;
+const delimiterCharacters = new Set(["(", ")", "[", "]", "{", "}", "<", ">", "'", "\"", "`"]);
 
 export type LessonRunState = {
   profileId: string;
@@ -215,6 +216,14 @@ function detectLikelyWrongFinger(expectedCharacter: string, keystroke: Keystroke
   }
 
   return areQwertyCodesNeighboring(expectedDescriptor.code, keystroke.code);
+}
+
+function detectDelimiterMismatch(lesson: Lesson, expectedCharacter: string, actualText: string) {
+  if (lesson.kind !== "code" || expectedCharacter === actualText) {
+    return false;
+  }
+
+  return delimiterCharacters.has(expectedCharacter) && delimiterCharacters.has(actualText);
 }
 
 function getLastScoredKeydown(keystrokes: KeystrokeEvent[]) {
@@ -436,7 +445,12 @@ export function processLessonKeystroke(
     !keyMatches && detectLikelyWrongFinger(expectedCharacter, incomingKeystroke)
       ? (["likely-wrong-finger"] as MistakeType[])
       : [];
+  const delimiterMismatch =
+    !keyMatches && detectDelimiterMismatch(state.lesson, expectedCharacter, actualText);
   const timingHesitation = detectTimingHesitation(state, incomingKeystroke);
+  const enrichedMistakeTags: MistakeType[] = delimiterMismatch
+    ? [...mistakeTags, "delimiter-mismatch"]
+    : mistakeTags;
   const mistakeType: MistakeType | undefined = !keyMatches
     ? "wrong-key"
     : shiftMismatch
@@ -448,7 +462,7 @@ export function processLessonKeystroke(
     expected: expectedCharacter,
     isCorrect: fullyCorrect,
     errorType: mistakeType,
-    errorTags: timingHesitation ? [...mistakeTags, "timing-hesitation"] : mistakeTags,
+    errorTags: timingHesitation ? [...enrichedMistakeTags, "timing-hesitation"] : enrichedMistakeTags,
   });
 
   const mistakes = [...state.mistakes];
@@ -462,7 +476,7 @@ export function processLessonKeystroke(
         state.cursorIndex,
         expectedCharacter,
         mistakeType,
-        mistakeTags,
+        enrichedMistakeTags,
         expectedShiftSide ?? undefined,
       ),
     );
@@ -523,6 +537,14 @@ export function processLessonKeystroke(
                     ? `Expected "${expectedCharacter}". The miss looks like adjacent finger drift.`
                     : `Expected "${expectedCharacter}". Logged the miss and tagged it as likely finger drift.`,
               }
+            : delimiterMismatch
+              ? {
+                  tone: state.session.strictness === "strict" ? "error" : "warning",
+                  message:
+                    state.session.strictness === "strict"
+                      ? `Expected "${expectedCharacter}". This looks like paired-delimiter drift in code syntax.`
+                      : `Expected "${expectedCharacter}". Logged the miss as a code delimiter mismatch.`,
+                }
             : {
                 tone: state.session.strictness === "strict" ? "error" : "warning",
                 message:

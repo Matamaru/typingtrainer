@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
 import { KeyboardCaptureEngine } from "../../core/keyboard/capture-engine";
-import { getLessonById } from "../../core/content/catalog";
+import { getLessonById, getNextLesson } from "../../core/content/catalog";
+import { listSessionSummaries, saveSessionSummary } from "../../core/storage/session-summaries";
 import {
   buildSessionSummary,
   createLessonRunState,
@@ -15,8 +16,9 @@ import {
   processLessonKeystroke,
   type LessonRunState,
 } from "../../core/trainer/engine";
-import { saveSessionSummary } from "../../core/storage/session-summaries";
 import type { SessionSummary } from "../../shared/types/domain";
+import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
+import { FingerGuidePanel } from "../../shared/ui/FingerGuidePanel";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
 
@@ -50,12 +52,18 @@ export function LessonDetailPage() {
   const { lessonId = "" } = useParams();
   const lesson = getLessonById(lessonId);
   const profile = useAppStore((state) => state.activeProfile);
+  const navigate = useNavigate();
   const captureSurfaceRef = useRef<HTMLTextAreaElement | null>(null);
+  const restartButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nextLessonLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const lessonsLinkRef = useRef<HTMLAnchorElement | null>(null);
   const captureEngineRef = useRef(new KeyboardCaptureEngine());
   const [runState, setRunState] = useState<LessonRunState | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [storedSummaries, setStoredSummaries] = useState<SessionSummary[]>([]);
 
   const strictness = profile?.preferences.strictness ?? "strict";
+  const showFingerGuides = profile?.preferences.showFingerGuides ?? true;
 
   useEffect(() => {
     if (!lesson || !profile) {
@@ -67,6 +75,24 @@ export function LessonDetailPage() {
     setRunState(createLessonRunState(lesson, strictness, profile.id));
     setSaveState("idle");
   }, [lesson, profile, strictness]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSummaries() {
+      const nextSummaries = await listSessionSummaries(profile?.id);
+
+      if (!cancelled) {
+        setStoredSummaries(nextSummaries);
+      }
+    }
+
+    void loadSummaries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
 
   useEffect(() => {
     captureSurfaceRef.current?.focus();
@@ -114,7 +140,36 @@ export function LessonDetailPage() {
     };
   }, [runState]);
 
+  const completedLessonIds = useMemo(() => {
+    const ids = new Set(storedSummaries.map((summary) => summary.lessonId));
+
+    if (lesson && runState && getLessonRunStatus(runState) === "completed") {
+      ids.add(lesson.id);
+    }
+
+    return ids;
+  }, [lesson, runState, storedSummaries]);
+
   const summary = useMemo(() => (runState ? buildSessionSummary(runState) : null), [runState]);
+  const nextLesson = useMemo(
+    () => (lesson ? getNextLesson(lesson.id, completedLessonIds) : undefined),
+    [completedLessonIds, lesson],
+  );
+
+  useEffect(() => {
+    if (!runState || getLessonRunStatus(runState) !== "completed") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      if (nextLessonLinkRef.current) {
+        nextLessonLinkRef.current.focus();
+        return;
+      }
+
+      lessonsLinkRef.current?.focus();
+    });
+  }, [nextLesson, runState]);
 
   function restartLesson() {
     if (!lesson || !profile) {
@@ -127,6 +182,16 @@ export function LessonDetailPage() {
   }
 
   function handleLessonKeyEvent(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Escape") {
+      event.currentTarget.blur();
+      restartButtonRef.current?.focus();
+      return;
+    }
+
+    if (shouldReleaseKeyboardCapture(event.key)) {
+      return;
+    }
+
     event.preventDefault();
 
     if (!runState) {
@@ -148,6 +213,50 @@ export function LessonDetailPage() {
 
     setRunState((current) => (current ? processLessonKeystroke(current, keystroke) : current));
   }
+
+  useEffect(() => {
+    function handleLessonShortcut(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        !event.altKey ||
+        !event.shiftKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isEditableKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.code === "KeyR") {
+        event.preventDefault();
+        restartLesson();
+        return;
+      }
+
+      if (event.code === "KeyL") {
+        event.preventDefault();
+        navigate("/lessons");
+        return;
+      }
+
+      if (event.code === "KeyN" && nextLesson) {
+        event.preventDefault();
+        navigate(`/lesson/${nextLesson.id}`);
+        return;
+      }
+
+      if (event.code === "KeyT") {
+        event.preventDefault();
+        captureSurfaceRef.current?.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleLessonShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleLessonShortcut);
+    };
+  }, [navigate, nextLesson, profile, strictness, lesson]);
 
   if (!lesson) {
     return (
@@ -174,6 +283,7 @@ export function LessonDetailPage() {
 
   const status = getLessonRunStatus(runState);
   const currentPromptText = getCurrentPromptText(runState);
+  const currentPrompt = lesson.prompts[runState.promptIndex];
   const promptNumber = Math.min(runState.promptIndex + 1, lesson.prompts.length);
 
   return (
@@ -228,8 +338,10 @@ export function LessonDetailPage() {
           <div className="lesson-prompt" aria-live="polite">
             {renderPrompt(currentPromptText, runState.currentPromptInput, runState.cursorIndex)}
           </div>
+          {currentPrompt?.notes ? <p className="lesson-helper">{currentPrompt.notes}</p> : null}
           <p className="lesson-helper">
-            Focus this panel and type the prompt. Backspace is only enabled outside strict mode.
+            Focus this panel and type the prompt. Press Tab to reach the action buttons or Escape
+            to leave capture. Backspace is only enabled outside strict mode.
           </p>
         </KeyboardCaptureSurface>
 
@@ -237,11 +349,36 @@ export function LessonDetailPage() {
           {runState.lastFeedback.message}
         </div>
 
+        {showFingerGuides ? (
+          <FingerGuidePanel promptText={currentPromptText} cursorIndex={runState.cursorIndex} />
+        ) : null}
+
         <div className="button-row">
-          <button className="panel-button" type="button" onClick={restartLesson}>
+          <button
+            ref={restartButtonRef}
+            className="panel-button"
+            type="button"
+            aria-keyshortcuts="Alt+Shift+R"
+            onClick={restartLesson}
+          >
             Restart lesson
           </button>
-          <Link className="panel-link" to="/lessons">
+          {nextLesson ? (
+            <Link
+              ref={nextLessonLinkRef}
+              className="panel-link panel-link--accent"
+              to={`/lesson/${nextLesson.id}`}
+              aria-keyshortcuts="Alt+Shift+N"
+            >
+              Next lesson
+            </Link>
+          ) : null}
+          <Link
+            ref={lessonsLinkRef}
+            className="panel-link"
+            to="/lessons"
+            aria-keyshortcuts="Alt+Shift+L"
+          >
             Back to lessons
           </Link>
         </div>

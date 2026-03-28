@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning while it is still pre-1.0.
 
+## [0.2.1] - 2026-03-28
+
+### Added
+
+- keyboard-first lesson flow with `Next lesson`, `Next adaptive session`, and page-level shortcuts
+- release-from-capture behavior so `Tab` and `Escape` work cleanly on lesson and practice surfaces
+- finger-guide helper panel and settings-aware runner integration
+- additional coding lessons for identifier rhythm, naming, and small full functions in Python, MicroPython, and C
+- syntax-aware adaptive code drills based on symbol substitutions and delimiter drift
+- streak tracking, focus-point progression, short/medium session goals, and a derived achievement wall
+
+### Changed
+
+- reworked the adaptive runner to behave like a keyboard-first training loop instead of a mouse-first generator page
+- switched level momentum from raw session count to focus points earned from calmer, cleaner sessions
+- expanded dashboard and stats views to surface consistency, goals, and achievement progress
+- synced README and ROADMAP to the current product state through Phase 6
+
+### Fixed
+
+- lesson and adaptive capture traps that previously blocked keyboard-only navigation
+- flaky lesson progression path by resolving next lessons from real catalog order and unlock state
+- multiple browser-flow regressions around hidden typing capture and static-route navigation
+
+### Verification
+
+- `npm run test:run`
+- `npm run build`
+- `npm run test:e2e`
+
 ## [0.2.0] - 2026-03-28
 
 ### Added
