@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { storeActiveProfileId } from "../../core/storage/profiles";
 import type { Profile, ProfilePreferences } from "../../shared/types/domain";
 
 type AppState = {
@@ -10,7 +11,10 @@ type AppState = {
 
 export const useAppStore = create<AppState>((set) => ({
   activeProfile: null,
-  setActiveProfile: (profile) => set({ activeProfile: profile }),
+  setActiveProfile: (profile) => {
+    storeActiveProfileId(profile.id);
+    set({ activeProfile: profile });
+  },
   patchPreferences: (patch) =>
     set((state) => {
       if (!state.activeProfile) {

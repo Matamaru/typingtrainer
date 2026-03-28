@@ -45,6 +45,10 @@ export function normalizeKeyLocation(location: number): KeyLocation {
 export class KeyboardCaptureEngine {
   private activeShiftSides = new Set<"left" | "right">();
 
+  resetModifiers() {
+    this.activeShiftSides.clear();
+  }
+
   processEvent(event: KeyboardEventLike): KeystrokeEvent {
     const phase = event.type;
     const location = normalizeKeyLocation(event.location);

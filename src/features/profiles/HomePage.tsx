@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
 import { lessonCatalog } from "../../core/content/catalog";
+import { buildLessonProgressMap, getRecommendedLesson } from "../../core/content/lesson-progress";
 import { buildAchievementSnapshot } from "../../core/gamification/achievements";
 import {
   buildSessionGoals,
@@ -48,6 +49,14 @@ export function HomePage() {
   const focusPointsToday = calculateTodayFocusPoints(summaries);
   const sessionGoals = buildSessionGoals(summaries);
   const achievements = buildAchievementSnapshot(summaries);
+  const progressMap = buildLessonProgressMap(lessonCatalog, summaries);
+  const recommendedLesson = getRecommendedLesson(lessonCatalog, progressMap);
+  const masteredLessonCount = lessonCatalog.filter(
+    (lesson) => progressMap.get(lesson.id)?.status === "mastered",
+  ).length;
+  const repeatLessonCount = lessonCatalog.filter(
+    (lesson) => progressMap.get(lesson.id)?.status === "repeat",
+  ).length;
 
   return (
     <div className="page-grid">
@@ -93,6 +102,14 @@ export function HomePage() {
             <strong>
               {achievements.unlockedCount}/{achievements.totalCount}
             </strong>
+          </article>
+          <article className="metric-card">
+            <span>Mastered lessons</span>
+            <strong>{masteredLessonCount}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Repeat recommended</span>
+            <strong>{repeatLessonCount}</strong>
           </article>
         </div>
         <p className="status-line">
@@ -169,6 +186,12 @@ export function HomePage() {
             Review stats and achievements
           </Link>
         </div>
+        {recommendedLesson ? (
+          <p className="status-line">
+            Current paced focus: <strong>{recommendedLesson.title}</strong>. Open lessons to repeat
+            unstable drills before pushing deeper into the ladder.
+          </p>
+        ) : null}
       </PageSection>
     </div>
   );

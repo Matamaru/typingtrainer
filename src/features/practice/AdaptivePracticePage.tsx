@@ -17,10 +17,15 @@ import {
   type LessonRunState,
 } from "../../core/trainer/engine";
 import type { SessionSummary } from "../../shared/types/domain";
-import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
+import {
+  shouldBypassKeyboardCapture,
+  shouldIgnoreEditableTargetForGlobalShortcut,
+  shouldReleaseKeyboardCapture,
+} from "../../shared/lib/keyboard";
 import { FingerGuidePanel } from "../../shared/ui/FingerGuidePanel";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
+import { RunnerInsightsPanel } from "../../shared/ui/RunnerInsightsPanel";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -142,6 +147,7 @@ export function AdaptivePracticePage() {
   }, [runState]);
 
   const summary = useMemo(() => (runState ? buildSessionSummary(runState) : null), [runState]);
+  const latestMistake = runState?.mistakes.at(-1);
 
   async function generateNextSession() {
     await reloadSummaries();
@@ -166,6 +172,10 @@ export function AdaptivePracticePage() {
     }
 
     if (shouldReleaseKeyboardCapture(event.key)) {
+      return;
+    }
+
+    if (shouldBypassKeyboardCapture(event)) {
       return;
     }
 
@@ -199,7 +209,7 @@ export function AdaptivePracticePage() {
         !event.shiftKey ||
         event.ctrlKey ||
         event.metaKey ||
-        isEditableKeyboardTarget(event.target)
+        shouldIgnoreEditableTargetForGlobalShortcut(event.target)
       ) {
         return;
       }
@@ -310,6 +320,9 @@ export function AdaptivePracticePage() {
           ariaLabel="Adaptive lesson typing capture"
           autoFocus
           className="capture-surface lesson-surface"
+          onCaptureBlur={() => {
+            captureEngineRef.current.resetModifiers();
+          }}
           onKeyDown={handleLessonKeyEvent}
           onKeyUp={handleLessonKeyEvent}
         >
@@ -323,6 +336,18 @@ export function AdaptivePracticePage() {
         <div className={`feedback-banner feedback-banner--${runState.lastFeedback.tone}`}>
           {runState.lastFeedback.message}
         </div>
+
+        <RunnerInsightsPanel
+          currentPromptText={currentPromptText}
+          cursorIndex={runState.cursorIndex}
+          latestMistake={latestMistake}
+          lastFeedback={runState.lastFeedback}
+          nextActionLabel="generate the next adaptive session"
+          promptCount={adaptivePlan.lesson.prompts.length}
+          promptHistoryLength={runState.promptHistory.length}
+          promptNumber={promptNumber}
+          status={status}
+        />
 
         {showFingerGuides ? (
           <FingerGuidePanel promptText={currentPromptText} cursorIndex={runState.cursorIndex} />

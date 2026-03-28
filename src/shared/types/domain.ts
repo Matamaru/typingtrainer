@@ -176,3 +176,11 @@ export type Recommendation = {
   focus: string[];
   lessonId?: string;
 };
+
+export type LocalBackup = {
+  version: 1;
+  exportedAt: string;
+  activeProfileId: string | null;
+  profiles: Profile[];
+  sessionSummaries: SessionSummary[];
+};

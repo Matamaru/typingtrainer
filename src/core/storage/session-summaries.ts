@@ -16,7 +16,7 @@ function normalizeCountList<T extends { count: number }>(entries: unknown): T[] 
   });
 }
 
-function normalizeSessionSummary(summary: SessionSummary): SessionSummary {
+export function normalizeSessionSummary(summary: SessionSummary): SessionSummary {
   return {
     ...summary,
     shiftSideErrors: summary.shiftSideErrors ?? 0,

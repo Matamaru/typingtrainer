@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning while it is still pre-1.0.
 
+## [0.3.0] - 2026-03-28
+
+### Added
+
+- shared runner-insights panels with clearer prompt flow, transition, and correction feedback
+- local profile switching, creation, and rename flows in settings and the sidebar
+- versioned local backup export/import for profiles and session summaries
+- mastery-paced lesson progression with `ready`, `repeat recommended`, and `mastered` states
+- browser-safe keyboard helper coverage and pacing tests for the guided ladder
+
+### Changed
+
+- reworked the lessons page and dashboard to surface paced progression instead of binary completed/locked state
+- updated lesson and adaptive runners to explain whether a completed run actually stabilized the pattern enough to move on
+- hardened typing capture surfaces so app shortcuts still work while focused and capture state is visibly shown
+- synced README and ROADMAP through full Phase 7 completion
+
+### Fixed
+
+- stale modifier state after focus loss by resetting capture-engine modifiers on blur
+- browser and desktop shortcut interference by allowing command chords and app navigation to pass through capture surfaces
+- local-profile bootstrap drift by persisting and restoring the active profile id cleanly across reloads and imports
+
+### Verification
+
+- `npm run test:run`
+- `npm run build`
+- `npm run test:e2e`
+
 ## [0.2.1] - 2026-03-28
 
 ### Added

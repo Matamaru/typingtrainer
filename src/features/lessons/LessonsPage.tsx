@@ -3,28 +3,42 @@ import { Link } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
 import {
+  lessonCatalog,
   getCodingLessons,
   getLessonsForStage,
   guidedLessonStages,
-  isLessonUnlocked,
 } from "../../core/content/catalog";
+import { buildLessonProgressMap, type LessonProgress } from "../../core/content/lesson-progress";
 import { listSessionSummaries } from "../../core/storage/session-summaries";
 import type { Lesson, SessionSummary } from "../../shared/types/domain";
 import { PageSection } from "../../shared/ui/PageSection";
 
-function renderLessonAction(lesson: Lesson, completedLessonIds: Set<string>) {
-  const completed = completedLessonIds.has(lesson.id);
-  const unlocked = isLessonUnlocked(lesson, completedLessonIds);
-
-  if (completed || unlocked) {
-    return (
-      <Link className="panel-link" to={`/lesson/${lesson.id}`}>
-        {completed ? "Repeat lesson" : "Start lesson"}
-      </Link>
-    );
+function renderLessonAction(lesson: Lesson, progress: LessonProgress | undefined) {
+  if (!progress || progress.status === "locked") {
+    return <span className="status-line">Master the prerequisite lesson first.</span>;
   }
 
-  return <span className="status-line">Finish prerequisite lessons first.</span>;
+  return (
+    <Link className="panel-link" to={`/lesson/${lesson.id}`}>
+      {progress.status === "ready" ? "Start lesson" : "Repeat lesson"}
+    </Link>
+  );
+}
+
+function getStatusPillClass(status: LessonProgress["status"]) {
+  if (status === "mastered") {
+    return "pill pill--success";
+  }
+
+  if (status === "repeat") {
+    return "pill pill--warning";
+  }
+
+  if (status === "locked") {
+    return "pill pill--muted";
+  }
+
+  return "pill pill--soft";
 }
 
 export function LessonsPage() {
@@ -49,8 +63,8 @@ export function LessonsPage() {
     };
   }, [profile?.id]);
 
-  const completedLessonIds = useMemo(() => {
-    return new Set(summaries.map((summary) => summary.lessonId));
+  const progressMap = useMemo(() => {
+    return buildLessonProgressMap(lessonCatalog, summaries);
   }, [summaries]);
 
   const codingLessons = getCodingLessons();
@@ -72,20 +86,29 @@ export function LessonsPage() {
             <p>{stage.description}</p>
             <div className="card-grid">
               {lessons.map((lesson) => {
-                const completed = completedLessonIds.has(lesson.id);
-                const unlocked = isLessonUnlocked(lesson, completedLessonIds);
+                const progress = progressMap.get(lesson.id);
+                const status = progress?.status ?? "locked";
 
                 return (
-                  <article key={lesson.id} className={`lesson-card${!completed && !unlocked ? " lesson-card--locked" : ""}`}>
+                  <article
+                    key={lesson.id}
+                    className={`lesson-card${status === "locked" ? " lesson-card--locked" : status === "mastered" ? " lesson-card--earned" : ""}`}
+                  >
                     <div className="lesson-card__header">
                       <span className="pill">{lesson.kind}</span>
                       <span className="pill">{lesson.locale ?? lesson.codeLanguage}</span>
-                      <span className={`pill${completed ? " pill--soft" : ""}`}>
-                        {completed ? "completed" : unlocked ? "unlocked" : "locked"}
+                      <span className={getStatusPillClass(status)}>
+                        {status === "repeat" ? "repeat recommended" : status}
                       </span>
                     </div>
                     <h3>{lesson.title}</h3>
                     <p>{lesson.summary}</p>
+                    <p className="status-line">
+                      {progress?.bestSummary
+                        ? `Best ${progress.bestSummary.accuracy.toFixed(1)}% across ${progress.attempts} attempt${progress.attempts === 1 ? "" : "s"}.`
+                        : `Target ${progress?.masteryTarget.accuracy ?? 0}%+ to unlock the next step.`}
+                    </p>
+                    <p className="status-line">{progress?.reasons[0] ?? "Ready for a first calm run."}</p>
                     <div className="pill-row">
                       {lesson.tags.map((tag) => (
                         <span key={tag} className="pill pill--soft">
@@ -93,7 +116,7 @@ export function LessonsPage() {
                         </span>
                       ))}
                     </div>
-                    {renderLessonAction(lesson, completedLessonIds)}
+                    {renderLessonAction(lesson, progress)}
                   </article>
                 );
               })}
@@ -109,20 +132,29 @@ export function LessonsPage() {
         </p>
         <div className="card-grid">
           {codingLessons.map((lesson) => {
-            const completed = completedLessonIds.has(lesson.id);
-            const unlocked = isLessonUnlocked(lesson, completedLessonIds);
+            const progress = progressMap.get(lesson.id);
+            const status = progress?.status ?? "locked";
 
             return (
-              <article key={lesson.id} className={`lesson-card${!completed && !unlocked ? " lesson-card--locked" : ""}`}>
+              <article
+                key={lesson.id}
+                className={`lesson-card${status === "locked" ? " lesson-card--locked" : status === "mastered" ? " lesson-card--earned" : ""}`}
+              >
                 <div className="lesson-card__header">
                   <span className="pill">{lesson.kind}</span>
                   <span className="pill">{lesson.codeLanguage}</span>
-                  <span className={`pill${completed ? " pill--soft" : ""}`}>
-                    {completed ? "completed" : unlocked ? "unlocked" : "locked"}
+                  <span className={getStatusPillClass(status)}>
+                    {status === "repeat" ? "repeat recommended" : status}
                   </span>
                 </div>
                 <h3>{lesson.title}</h3>
                 <p>{lesson.summary}</p>
+                <p className="status-line">
+                  {progress?.bestSummary
+                    ? `Best ${progress.bestSummary.accuracy.toFixed(1)}% across ${progress.attempts} attempt${progress.attempts === 1 ? "" : "s"}.`
+                    : `Target ${progress?.masteryTarget.accuracy ?? 0}%+ before moving deeper into code.`}
+                </p>
+                <p className="status-line">{progress?.reasons[0] ?? "Ready for a first calm run."}</p>
                 <div className="pill-row">
                   {lesson.tags.map((tag) => (
                     <span key={tag} className="pill pill--soft">
@@ -130,7 +162,7 @@ export function LessonsPage() {
                     </span>
                   ))}
                 </div>
-                {renderLessonAction(lesson, completedLessonIds)}
+                {renderLessonAction(lesson, progress)}
               </article>
             );
           })}

@@ -1,6 +1,6 @@
 import { type PropsWithChildren, useEffect, useState } from "react";
 
-import { ensureDefaultProfile } from "../core/storage/profiles";
+import { resolveInitialProfile } from "../core/storage/profiles";
 import { useAppStore } from "./store/app-store";
 
 type BootstrapState = "loading" | "ready" | "error";
@@ -15,9 +15,15 @@ export function AppBootstrap({ children }: PropsWithChildren) {
 
     async function bootstrap() {
       try {
-        const profile = await ensureDefaultProfile();
+        const profile = await resolveInitialProfile();
 
         if (cancelled) {
+          return;
+        }
+
+        if (!profile) {
+          setErrorMessage("No local profile could be resolved from IndexedDB.");
+          setStatus("error");
           return;
         }
 

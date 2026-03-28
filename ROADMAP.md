@@ -270,20 +270,25 @@ Current next step:
 
 Goal: make the app reliable enough for daily personal use.
 
-- [ ] Improve session UX and transitions
-- [ ] Improve visual clarity of guidance and correction
-- [ ] Add settings for strictness and guidance visibility
-- [ ] Add profile management polish
-- [ ] Add export/import for local profile data if useful
-- [ ] Test Firefox thoroughly
-- [ ] Test keyboard behavior under realistic desktop usage
-- [ ] Tune pacing and difficulty
+- [x] Improve session UX and transitions
+- [x] Improve visual clarity of guidance and correction
+- [x] Add settings for strictness and guidance visibility
+- [x] Add profile management polish
+- [x] Add export/import for local profile data if useful
+- [x] Tune pacing and difficulty
+- [x] Test Firefox thoroughly
+- [x] Test keyboard behavior under realistic desktop usage
 
 Exit criteria:
 
 - stable for daily use
 - no major data-loss risk
 - lessons, stats, and profiles feel coherent
+
+Phase 7 status:
+
+- complete
+- current implementation includes richer runner progress panels, transition previews, clearer latest-correction detail, local profile switching/rename/create flows, versioned local backup export/import, mastery-paced lesson progression, and desktop-safe capture behavior in Firefox
 
 ## Later Versions
 

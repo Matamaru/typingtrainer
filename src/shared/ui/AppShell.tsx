@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
-import { isEditableKeyboardTarget } from "../lib/keyboard";
+import type { Profile } from "../types/domain";
+import { listProfiles } from "../../core/storage/profiles";
+import { shouldIgnoreEditableTargetForGlobalShortcut } from "../lib/keyboard";
 
 const navigationItems = [
   { to: "/", label: "Dashboard", shortcutCode: "Digit1", shortcutLabel: "Alt+Shift+1" },
@@ -31,8 +33,10 @@ const navigationItems = [
 
 export function AppShell() {
   const profile = useAppStore((state) => state.activeProfile);
+  const setActiveProfile = useAppStore((state) => state.setActiveProfile);
   const navigate = useNavigate();
   const mainContentRef = useRef<HTMLDivElement | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   useEffect(() => {
     function handleGlobalShortcut(event: KeyboardEvent) {
@@ -42,7 +46,7 @@ export function AppShell() {
         !event.shiftKey ||
         event.ctrlKey ||
         event.metaKey ||
-        isEditableKeyboardTarget(event.target)
+        shouldIgnoreEditableTargetForGlobalShortcut(event.target)
       ) {
         return;
       }
@@ -67,6 +71,24 @@ export function AppShell() {
       window.removeEventListener("keydown", handleGlobalShortcut);
     };
   }, [navigate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfiles() {
+      const storedProfiles = await listProfiles();
+
+      if (!cancelled) {
+        setProfiles(storedProfiles);
+      }
+    }
+
+    void loadProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, profile?.updatedAt]);
 
   return (
     <div className="app-shell">
@@ -130,6 +152,25 @@ export function AppShell() {
         <div className="profile-card">
           <p className="eyebrow">active profile</p>
           <strong>{profile?.name ?? "Loading..."}</strong>
+          <label className="field field--inverse">
+            <span>Switch local profile</span>
+            <select
+              value={profile?.id ?? ""}
+              onChange={(event) => {
+                const selectedProfile = profiles.find((entry) => entry.id === event.target.value);
+
+                if (selectedProfile) {
+                  setActiveProfile(selectedProfile);
+                }
+              }}
+            >
+              {profiles.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <span>Strictness: {profile?.preferences.strictness ?? "strict"}</span>
           <span>
             Finger guides: {profile?.preferences.showFingerGuides ? "visible" : "hidden"}

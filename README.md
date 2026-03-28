@@ -6,16 +6,21 @@ This project is being built first for personal use, but the goal is to make it c
 
 ## Status
 
-Current release: `v0.2.1`
+Current release: `v0.3.0`
 
 What is working now:
 
 - guided browser-based lessons with real keystroke scoring
 - adaptive practice generated from stored weakness data
 - keyboard-only lesson and adaptive workflows, with matching mouse support still intact
-- local profiles and local session history
+- switchable local profiles and local session history
+- versioned local backup export/import for profiles and session history
+- mastery-paced lesson progression with `ready`, `repeat recommended`, and `mastered` states
+- desktop-safe capture surfaces that keep app shortcuts working and reset stale modifier state on blur
 - stats for weak keys, finger zones, substitutions, timing hesitation, and heatmaps
 - streaks, focus-point progression, session goals, and derived achievements from stored session history
+- richer runner UX with progress tracks, transition previews, and detailed correction panels
+- settings-driven profile management for switching, renaming, and creating local profiles
 - staged beginner lesson ladder plus coding crossover packs with full-function drills and syntax-aware adaptive recovery
 
 Primary docs:

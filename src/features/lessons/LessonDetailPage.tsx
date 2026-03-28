@@ -2,8 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAppStore } from "../../app/store/app-store";
+import { lessonCatalog, getLessonById } from "../../core/content/catalog";
+import {
+  buildLessonProgressMap,
+  getNextPacedLesson,
+} from "../../core/content/lesson-progress";
 import { KeyboardCaptureEngine } from "../../core/keyboard/capture-engine";
-import { getLessonById, getNextLesson } from "../../core/content/catalog";
 import { listSessionSummaries, saveSessionSummary } from "../../core/storage/session-summaries";
 import {
   buildSessionSummary,
@@ -17,10 +21,15 @@ import {
   type LessonRunState,
 } from "../../core/trainer/engine";
 import type { SessionSummary } from "../../shared/types/domain";
-import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
+import {
+  shouldBypassKeyboardCapture,
+  shouldIgnoreEditableTargetForGlobalShortcut,
+  shouldReleaseKeyboardCapture,
+} from "../../shared/lib/keyboard";
 import { FingerGuidePanel } from "../../shared/ui/FingerGuidePanel";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
+import { RunnerInsightsPanel } from "../../shared/ui/RunnerInsightsPanel";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -140,21 +149,24 @@ export function LessonDetailPage() {
     };
   }, [runState]);
 
-  const completedLessonIds = useMemo(() => {
-    const ids = new Set(storedSummaries.map((summary) => summary.lessonId));
-
-    if (lesson && runState && getLessonRunStatus(runState) === "completed") {
-      ids.add(lesson.id);
+  const summary = useMemo(() => (runState ? buildSessionSummary(runState) : null), [runState]);
+  const summariesForProgress = useMemo(() => {
+    if (!lesson || !runState || !summary || getLessonRunStatus(runState) !== "completed") {
+      return storedSummaries;
     }
 
-    return ids;
-  }, [lesson, runState, storedSummaries]);
-
-  const summary = useMemo(() => (runState ? buildSessionSummary(runState) : null), [runState]);
-  const nextLesson = useMemo(
-    () => (lesson ? getNextLesson(lesson.id, completedLessonIds) : undefined),
-    [completedLessonIds, lesson],
+    return [summary, ...storedSummaries.filter((entry) => entry.id !== summary.id)];
+  }, [lesson, runState, storedSummaries, summary]);
+  const progressMap = useMemo(
+    () => buildLessonProgressMap(lessonCatalog, summariesForProgress),
+    [summariesForProgress],
   );
+  const lessonProgress = lesson ? progressMap.get(lesson.id) : undefined;
+  const nextLesson = useMemo(
+    () => (lesson ? getNextPacedLesson(lessonCatalog, lesson.id, progressMap) : undefined),
+    [lesson, progressMap],
+  );
+  const latestMistake = runState?.mistakes.at(-1);
 
   useEffect(() => {
     if (!runState || getLessonRunStatus(runState) !== "completed") {
@@ -192,6 +204,10 @@ export function LessonDetailPage() {
       return;
     }
 
+    if (shouldBypassKeyboardCapture(event)) {
+      return;
+    }
+
     event.preventDefault();
 
     if (!runState) {
@@ -222,7 +238,7 @@ export function LessonDetailPage() {
         !event.shiftKey ||
         event.ctrlKey ||
         event.metaKey ||
-        isEditableKeyboardTarget(event.target)
+        shouldIgnoreEditableTargetForGlobalShortcut(event.target)
       ) {
         return;
       }
@@ -317,6 +333,10 @@ export function LessonDetailPage() {
             <span>Status</span>
             <strong>{status}</strong>
           </article>
+          <article className="metric-card">
+            <span>Pacing</span>
+            <strong>{lessonProgress?.status === "repeat" ? "repeat" : lessonProgress?.status ?? "ready"}</strong>
+          </article>
         </div>
       </PageSection>
 
@@ -331,6 +351,9 @@ export function LessonDetailPage() {
           ariaLabel="Lesson typing capture"
           autoFocus
           className="capture-surface lesson-surface"
+          onCaptureBlur={() => {
+            captureEngineRef.current.resetModifiers();
+          }}
           onKeyDown={handleLessonKeyEvent}
           onKeyUp={handleLessonKeyEvent}
         >
@@ -348,6 +371,18 @@ export function LessonDetailPage() {
         <div className={`feedback-banner feedback-banner--${runState.lastFeedback.tone}`}>
           {runState.lastFeedback.message}
         </div>
+
+        <RunnerInsightsPanel
+          currentPromptText={currentPromptText}
+          cursorIndex={runState.cursorIndex}
+          latestMistake={latestMistake}
+          lastFeedback={runState.lastFeedback}
+          nextActionLabel={nextLesson ? `start ${nextLesson.title}` : "return to lessons"}
+          promptCount={lesson.prompts.length}
+          promptHistoryLength={runState.promptHistory.length}
+          promptNumber={promptNumber}
+          status={status}
+        />
 
         {showFingerGuides ? (
           <FingerGuidePanel promptText={currentPromptText} cursorIndex={runState.cursorIndex} />
@@ -419,6 +454,13 @@ export function LessonDetailPage() {
               <p>
                 Accuracy {summary.accuracy.toFixed(1)}% across {summary.scoredKeystrokes} scored
                 keystrokes in {formatDuration(summary.durationMs)}.
+              </p>
+              <p className="status-line">
+                {lessonProgress?.status === "mastered"
+                  ? "This lesson is mastered and the next paced lesson is now open."
+                  : lessonProgress?.status === "repeat"
+                    ? lessonProgress.reasons[0]
+                    : `Reach ${lessonProgress?.masteryTarget.accuracy ?? 0}%+ calm accuracy to open the next lesson.`}
               </p>
               <div className="pill-row">
                 {summary.weakKeys.map((entry) => (

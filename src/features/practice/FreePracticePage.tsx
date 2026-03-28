@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { KeyboardCaptureEngine } from "../../core/keyboard/capture-engine";
 import type { KeystrokeEvent } from "../../shared/types/domain";
-import { isEditableKeyboardTarget, shouldReleaseKeyboardCapture } from "../../shared/lib/keyboard";
+import {
+  shouldBypassKeyboardCapture,
+  shouldIgnoreEditableTargetForGlobalShortcut,
+  shouldReleaseKeyboardCapture,
+} from "../../shared/lib/keyboard";
 import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
 
@@ -36,7 +40,7 @@ export function FreePracticePage() {
         !event.shiftKey ||
         event.ctrlKey ||
         event.metaKey ||
-        isEditableKeyboardTarget(event.target)
+        shouldIgnoreEditableTargetForGlobalShortcut(event.target)
       ) {
         return;
       }
@@ -61,6 +65,10 @@ export function FreePracticePage() {
     }
 
     if (shouldReleaseKeyboardCapture(event.key)) {
+      return;
+    }
+
+    if (shouldBypassKeyboardCapture(event)) {
       return;
     }
 
@@ -97,6 +105,9 @@ export function FreePracticePage() {
           ariaLabel="Free practice keyboard capture"
           autoFocus
           className="capture-surface"
+          onCaptureBlur={() => {
+            engineRef.current.resetModifiers();
+          }}
           onKeyDown={pushCapturedEvent}
           onKeyUp={pushCapturedEvent}
         >

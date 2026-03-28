@@ -79,4 +79,31 @@ describe("KeyboardCaptureEngine", () => {
     expect(releaseStroke.shiftSide).toBe("left");
     expect(releaseStroke.shiftPressed).toBe(false);
   });
+
+  it("clears stale shift state when modifiers are reset after blur", () => {
+    const engine = new KeyboardCaptureEngine();
+
+    engine.processEvent(
+      buildKeyboardEvent({
+        code: "ShiftRight",
+        key: "Shift",
+        location: 2,
+        shiftKey: true,
+      }),
+    );
+
+    engine.resetModifiers();
+
+    const letterStroke = engine.processEvent(
+      buildKeyboardEvent({
+        code: "KeyA",
+        key: "a",
+        shiftKey: false,
+        timeStamp: 2,
+      }),
+    );
+
+    expect(letterStroke.shiftSide).toBe("none");
+    expect(letterStroke.shiftPressed).toBe(false);
+  });
 });
