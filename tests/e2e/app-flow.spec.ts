@@ -21,11 +21,26 @@ test("all primary pages render and core flows stay functional", async ({ page })
   await expect(page.getByRole("heading", { name: "Technique achievements" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Session goals" })).toBeVisible();
   await expect(page.getByText("Mastered lessons")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Train editor shortcuts" })).toBeVisible();
 
   await page.getByRole("link", { name: "Lessons" }).click();
   await expect(page.getByRole("heading", { name: "Guided beginner ladder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Stage 1: Home Row Stability" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Code crossover lessons" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open lesson early" }).first()).toBeVisible();
+
+  const symbolLessonCard = page.locator(".lesson-card").filter({
+    has: page.getByRole("heading", { name: "Symbol Ladders" }),
+  });
+  await expect(symbolLessonCard.getByRole("link", { name: "Open lesson early" })).toBeVisible();
+  await symbolLessonCard.getByRole("link", { name: "Open lesson early" }).click();
+  await expect(page.getByRole("heading", { name: "Symbol Ladders" })).toBeVisible();
+  await expect(
+    page.getByText(
+      "This lesson is open early. It will not pace-unlock the next step until its prerequisite lesson is mastered.",
+    ),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to lessons" }).click();
 
   await page.getByRole("link", { name: "Start lesson" }).first().click();
   await expect(page.getByRole("heading", { name: "Home Row Foundations" })).toBeVisible();
@@ -55,7 +70,7 @@ test("all primary pages render and core flows stay functional", async ({ page })
   await expect(
     page.getByText("Capture ready. Browser and app shortcuts still pass through."),
   ).toBeVisible();
-  await page.keyboard.press("Alt+Shift+Digit6");
+  await page.keyboard.press("Alt+Shift+Digit7");
 
   await expect(page.getByRole("heading", { name: "Stored session summaries" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Achievement wall" })).toBeVisible();
@@ -87,6 +102,14 @@ test("all primary pages render and core flows stay functional", async ({ page })
   await expect(
     page.locator(".metric-card").filter({ has: page.getByText("Code") }).getByText("KeyA"),
   ).toBeVisible();
+
+  await page.getByRole("link", { name: "Shortcuts" }).click();
+  await expect(page.getByRole("heading", { name: "Shortcut training" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delete Previous Word" })).toBeVisible();
+  const shortcutCapture = page.getByLabel("Shortcut training capture");
+  await shortcutCapture.focus();
+  await page.keyboard.press("Control+Backspace");
+  await expect(page.getByText("Correct. Ctrl+Backspace / Alt+Backspace is now mapped to this editor action.")).toBeVisible();
 
   await page.getByRole("link", { name: "Coding" }).click();
   await expect(page.getByRole("heading", { name: "Typing-first code practice" })).toBeVisible();

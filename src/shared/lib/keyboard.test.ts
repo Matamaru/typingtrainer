@@ -56,4 +56,23 @@ describe("keyboard helpers", () => {
       }),
     ).toBe(false);
   });
+
+  it("keeps ctrl/alt backspace inside capture so chunk deletion can be trained", () => {
+    expect(
+      shouldBypassKeyboardCapture({
+        key: "Backspace",
+        ctrlKey: true,
+        metaKey: false,
+        altKey: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldBypassKeyboardCapture({
+        key: "Backspace",
+        ctrlKey: false,
+        metaKey: false,
+        altKey: true,
+      }),
+    ).toBe(false);
+  });
 });

@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning while it is still pre-1.0.
 
+## [0.3.1] - 2026-03-28
+
+### Added
+
+- dedicated symbol lessons for number-row/operator symbols and edge symbols such as `` ` ~ \ | ``
+- correction-control training with guided Backspace and chunk-delete practice
+- browser-safe shortcut training for word deletion, word jumps, selection growth, `Home`, `End`, and `Ctrl+A`
+
+### Changed
+
+- updated the lessons page so paced-locked lessons can still be opened early for deliberate practice
+- synced README and ROADMAP to reflect shortcut training and the expanded symbol/correction path
+
+### Fixed
+
+- lesson-to-lesson focus handoff by remounting the lesson detail route per lesson id
+- symbol and edge-symbol lesson discoverability by replacing dead-end locked cards with actionable entry links
+
+### Verification
+
+- `npm run test:run`
+- `npm run build`
+- `npm run test:e2e`
+
 ## [0.3.0] - 2026-03-28
 
 ### Added

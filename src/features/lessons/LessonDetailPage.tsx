@@ -71,7 +71,7 @@ export function LessonDetailPage() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [storedSummaries, setStoredSummaries] = useState<SessionSummary[]>([]);
 
-  const strictness = profile?.preferences.strictness ?? "strict";
+  const strictness = lesson?.preferredStrictness ?? profile?.preferences.strictness ?? "strict";
   const showFingerGuides = profile?.preferences.showFingerGuides ?? true;
 
   useEffect(() => {
@@ -306,6 +306,18 @@ export function LessonDetailPage() {
     <div className="page-grid">
       <PageSection eyebrow={lesson.kind} title={lesson.title}>
         <p>{lesson.summary}</p>
+        {lessonProgress?.status === "locked" ? (
+          <p className="status-line">
+            This lesson is open early. It will not pace-unlock the next step until its prerequisite
+            lesson is mastered.
+          </p>
+        ) : null}
+        {lesson.preferredStrictness ? (
+          <p className="status-line">
+            This lesson temporarily uses <strong>{lesson.preferredStrictness}</strong> mode so
+            correction drills can use Backspace and chunk deletion.
+          </p>
+        ) : null}
         <div className="metric-grid">
           <article className="metric-card">
             <span>Prompt</span>
@@ -364,7 +376,8 @@ export function LessonDetailPage() {
           {currentPrompt?.notes ? <p className="lesson-helper">{currentPrompt.notes}</p> : null}
           <p className="lesson-helper">
             Focus this panel and type the prompt. Press Tab to reach the action buttons or Escape
-            to leave capture. Backspace is only enabled outside strict mode.
+            to leave capture. Backspace is only enabled outside strict mode, and Ctrl+Backspace or
+            Alt+Backspace delete back to the previous word or symbol boundary.
           </p>
         </KeyboardCaptureSurface>
 

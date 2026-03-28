@@ -19,8 +19,15 @@ describe("content catalog", () => {
     ]);
     expect(stageThreeLessons.map((lesson) => lesson.id)).toEqual([
       "en-capitalization-ladders",
+      "en-symbol-ladders",
+      "en-edge-symbols",
       "en-punctuation-and-brackets",
       "en-modifier-control",
+    ]);
+    expect(getLessonsForStage(4).map((lesson) => lesson.id)).toEqual([
+      "en-calm-prose-carryover",
+      "en-correction-control",
+      "de-ruhe-und-praezision",
     ]);
   });
 
@@ -67,7 +74,7 @@ describe("content catalog", () => {
       "en-finger-map-anchors",
     );
     expect(getNextLesson("en-calm-prose-carryover", completedLessonIds)?.id).toBe(
-      "de-ruhe-und-praezision",
+      "en-correction-control",
     );
   });
 });

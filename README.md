@@ -6,22 +6,25 @@ This project is being built first for personal use, but the goal is to make it c
 
 ## Status
 
-Current release: `v0.3.0`
+Current release: `v0.3.1`
 
 What is working now:
 
 - guided browser-based lessons with real keystroke scoring
 - adaptive practice generated from stored weakness data
 - keyboard-only lesson and adaptive workflows, with matching mouse support still intact
+- browser-safe shortcut training for chunk deletion, word jumps, selection growth, line edges, and select-all
 - switchable local profiles and local session history
 - versioned local backup export/import for profiles and session history
 - mastery-paced lesson progression with `ready`, `repeat recommended`, and `mastered` states
+- paced lesson cards can still be opened early when you want to practice ahead of the recommended unlock
 - desktop-safe capture surfaces that keep app shortcuts working and reset stale modifier state on blur
 - stats for weak keys, finger zones, substitutions, timing hesitation, and heatmaps
 - streaks, focus-point progression, session goals, and derived achievements from stored session history
 - richer runner UX with progress tracks, transition previews, and detailed correction panels
 - settings-driven profile management for switching, renaming, and creating local profiles
-- staged beginner lesson ladder plus coding crossover packs with full-function drills and syntax-aware adaptive recovery
+- staged beginner lesson ladder with dedicated symbol ladders, edge-symbol work, and correction-control practice
+- coding crossover packs with full-function drills and syntax-aware adaptive recovery
 
 Primary docs:
 
@@ -46,8 +49,9 @@ Keyboard-first notes:
 
 - `Tab` moves between controls and leaves typing capture surfaces
 - `Escape` leaves typing capture
-- `Alt+Shift+1-7` jumps across primary pages
+- `Alt+Shift+1-8` jumps across primary pages
 - lesson and adaptive runners expose their main actions through keyboard shortcuts and predictable focus order
+- the shortcut trainer exposes `Alt+Shift+T`, `Alt+Shift+R`, and `Alt+Shift+N`
 
 Routing note:
 
@@ -149,6 +153,7 @@ Current routes:
 - `/lesson/:id`
 - `/practice/adaptive`
 - `/practice/free`
+- `/practice/shortcuts`
 - `/coding`
 - `/stats`
 - `/settings`
@@ -223,6 +228,7 @@ The trainer may later become shareable and more general-purpose.
 - fixed beginner lessons
 - adaptive drills based on mistake history
 - free practice mode
+- browser-safe shortcut training mode
 - prose practice in English and German
 - English-first lesson progression
 - coding practice for Python, MicroPython, and C
@@ -268,7 +274,7 @@ The guided path is now staged and ordered:
 - Stage 1: home row and finger anchors
 - Stage 2: top row, bottom row, and number-row reach
 - Stage 3: capitals, punctuation, brackets, and modifier control
-- Stage 4: English-first prose carryover, then German support
+- Stage 4: English-first prose carryover, correction control, then German support
 - coding crossover lessons unlock after the core technique path
 
 When finger guidance is enabled in settings, guided and adaptive runners show the current target key, finger, row, and Shift hint inline.
@@ -298,6 +304,20 @@ The user can practice with:
 - curated built-in text
 - curated built-in code snippets
 - generated drills from personal mistake history
+
+### 4. Shortcut Training
+
+The shortcut trainer focuses on editor-safe keyboard control rather than browser-reserved commands.
+
+Current drills cover:
+
+- previous-word deletion with `Ctrl+Backspace` or `Alt+Backspace`
+- word jumps with `Ctrl+ArrowLeft` and `Ctrl+ArrowRight`
+- selection growth with `Ctrl+Shift+ArrowLeft` and `Ctrl+Shift+ArrowRight`
+- `Home` and `End`
+- `Ctrl+A`
+
+The drills use a simulated editor preview so the user can rehearse correction and navigation chords without leaving the keyboard.
 
 ## Shift-Key Policy
 
@@ -384,17 +404,17 @@ Later versions may include:
 - layout recommendation features
 - optional local AI-generated drills through Ollama
 - more advanced coding drill packs
-- shortcut and navigation-key training
+- navigation-key drill packs beyond the current editor-safe shortcut set
 - sharable profile exports/imports
 
 ## Development Status
 
-This project has entered Phase 2 engine implementation.
+The core product phases through Phase 7 are implemented in the current branch.
 
 Implemented so far:
 
 - the Vite + React + TypeScript app shell
-- the initial route structure
+- the current route structure including adaptive, free-practice, and shortcut-training pages
 - typed lesson content and starter coding packs
 - local profile bootstrap with Dexie and IndexedDB
 - a raw keyboard capture engine with shift-side tracking
@@ -402,11 +422,12 @@ Implemented so far:
 - an interactive lesson runner backed by a plain TypeScript session engine
 - local session summaries and stats aggregation
 - a service worker that caches the app shell and loaded same-origin assets for offline reuse
-- unit tests and a Playwright smoke-test harness
+- a browser-safe shortcut training pack for editor-style correction and navigation
+- unit tests and a Playwright Firefox suite covering primary flows
 
-Phase 1 foundation work is complete.
+Current frontier work:
 
-Still pending from verification and later engine work:
-
-- a runnable Playwright Firefox pass once the browser binary is installed
-- deeper mistake heuristics and richer per-finger analytics
+- workflow-specific keyboard-mastery drill packs
+- broader navigation-key practice
+- optional local AI drill generation
+- additional keyboard layouts after QWERTY is stable

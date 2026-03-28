@@ -179,6 +179,9 @@ export function HomePage() {
           <Link className="panel-link" to="/lessons">
             Start a guided lesson
           </Link>
+          <Link className="panel-link" to="/practice/shortcuts">
+            Train editor shortcuts
+          </Link>
           <Link className="panel-link" to="/practice/free">
             Inspect raw key capture
           </Link>

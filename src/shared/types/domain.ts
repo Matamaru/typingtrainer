@@ -70,6 +70,7 @@ export type Lesson = {
   summary: string;
   mode: PracticeMode;
   kind: LessonKind;
+  preferredStrictness?: PracticeStrictness;
   stage?: number;
   sequence?: number;
   prerequisiteLessonIds?: string[];

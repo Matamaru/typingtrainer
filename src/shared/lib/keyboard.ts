@@ -53,6 +53,10 @@ export function shouldIgnoreEditableTargetForGlobalShortcut(target: EventTarget 
 }
 
 export function shouldBypassKeyboardCapture(event: KeyboardCaptureCandidate) {
+  if (event.key === "Backspace" && !event.metaKey && (event.ctrlKey || event.altKey)) {
+    return false;
+  }
+
   if (event.ctrlKey || event.metaKey) {
     return true;
   }

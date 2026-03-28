@@ -200,6 +200,61 @@ describe("processLessonKeystroke", () => {
 
     expect(nextState.mistakes.some((mistake) => mistake.type === "timing-hesitation")).toBe(true);
   });
+
+  it("allows chunk deletion with ctrl-backspace outside strict mode", () => {
+    const state = createLessonRunState(
+      buildLesson({ prompts: [{ id: "p1", text: "steady rhythm again" }] }),
+      "guided",
+      "profile-1",
+    );
+
+    const typedState = {
+      ...state,
+      cursorIndex: "steady rhythm again".length,
+      currentPromptInput: "steady rhythm again",
+    };
+
+    const nextState = processLessonKeystroke(
+      typedState,
+      buildKeystroke({
+        key: "Backspace",
+        code: "Backspace",
+        ctrlKey: true,
+      }),
+    );
+
+    expect(nextState.cursorIndex).toBe("steady rhythm ".length);
+    expect(nextState.currentPromptInput).toBe("steady rhythm ");
+    expect(nextState.backspaceCount).toBe(1);
+    expect(nextState.lastFeedback.message).toContain("Chunk delete");
+  });
+
+  it("keeps chunk deletion blocked in strict mode", () => {
+    const state = createLessonRunState(
+      buildLesson({ prompts: [{ id: "p1", text: "steady rhythm again" }] }),
+      "strict",
+      "profile-1",
+    );
+
+    const typedState = {
+      ...state,
+      cursorIndex: "steady rhythm again".length,
+      currentPromptInput: "steady rhythm again",
+    };
+
+    const nextState = processLessonKeystroke(
+      typedState,
+      buildKeystroke({
+        key: "Backspace",
+        code: "Backspace",
+        ctrlKey: true,
+      }),
+    );
+
+    expect(nextState.cursorIndex).toBe("steady rhythm again".length);
+    expect(nextState.currentPromptInput).toBe("steady rhythm again");
+    expect(nextState.lastFeedback.message).toContain("Strict mode keeps the cursor anchored");
+  });
 });
 
 describe("buildSessionSummary", () => {

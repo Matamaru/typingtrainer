@@ -14,8 +14,25 @@ import type { Lesson, SessionSummary } from "../../shared/types/domain";
 import { PageSection } from "../../shared/ui/PageSection";
 
 function renderLessonAction(lesson: Lesson, progress: LessonProgress | undefined) {
-  if (!progress || progress.status === "locked") {
-    return <span className="status-line">Master the prerequisite lesson first.</span>;
+  if (!progress) {
+    return (
+      <Link className="panel-link" to={`/lesson/${lesson.id}`}>
+        Start lesson
+      </Link>
+    );
+  }
+
+  if (progress.status === "locked") {
+    return (
+      <>
+        <span className="status-line">
+          Pacing still recommends mastering the prerequisite lesson first.
+        </span>
+        <Link className="panel-link" to={`/lesson/${lesson.id}`}>
+          Open lesson early
+        </Link>
+      </>
+    );
   }
 
   return (
@@ -73,8 +90,9 @@ export function LessonsPage() {
     <div className="page-grid">
       <PageSection eyebrow="guided path" title="Guided beginner ladder">
         <p>
-          The catalog is now ordered as a deliberate beginner path. Later lessons stay locked until
-          the earlier mechanics are completed for the active local profile.
+          The catalog is now ordered as a deliberate beginner path. Pacing still marks later
+          lessons as locked until earlier mechanics are stable enough, but you can open any lesson
+          early if you want to practice ahead of the recommendation.
         </p>
       </PageSection>
 

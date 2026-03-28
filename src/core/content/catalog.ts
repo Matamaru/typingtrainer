@@ -13,12 +13,15 @@ import { germanAccuracyLesson } from "../../content/lessons/de/accuracy";
 import {
   englishBottomRowLesson,
   englishCapitalizationLesson,
+  englishCorrectionLesson,
+  englishEdgeSymbolLesson,
   englishFingerMapLesson,
   englishHomeRowLesson,
   englishModifierLesson,
   englishNumberRowLesson,
   englishProseLesson,
   englishPunctuationLesson,
+  englishSymbolLesson,
   englishTopRowLesson,
 } from "../../content/lessons/en/foundations";
 import type { Lesson } from "../../shared/types/domain";
@@ -37,12 +40,14 @@ export const guidedLessonStages = [
   {
     stage: 3,
     title: "Stage 3: Capitals And Symbols",
-    description: "Build disciplined Shift use, punctuation control, and modifier confidence.",
+    description:
+      "Build disciplined Shift use, number-row/operator symbol control, and modifier confidence.",
   },
   {
     stage: 4,
     title: "Stage 4: Prose Carryover",
-    description: "Carry drill mechanics into English first, then German prose support.",
+    description:
+      "Carry drill mechanics into English first, then correction discipline and German prose support.",
   },
 ] as const;
 
@@ -71,9 +76,12 @@ export const lessonCatalog: Lesson[] = [
   englishBottomRowLesson,
   englishNumberRowLesson,
   englishCapitalizationLesson,
+  englishSymbolLesson,
+  englishEdgeSymbolLesson,
   englishPunctuationLesson,
   englishModifierLesson,
   englishProseLesson,
+  englishCorrectionLesson,
   germanAccuracyLesson,
   pythonFunctionFlowLesson,
   pythonIdentifierRhythmLesson,

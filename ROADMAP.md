@@ -180,6 +180,7 @@ Goal: create a very guided path for foundational touch typing.
 - [x] Punctuation and bracket lessons
 - [x] Capitalization lessons
 - [x] Modifier lessons
+- [x] Correction-control lessons
 - [x] English-first prose lessons
 - [x] German prose support
 - [x] Wire finger-guide visibility into the lesson runner
@@ -264,7 +265,7 @@ Phase 6 status:
 
 Current next step:
 
-- Phase 7 polish around session transitions, correction clarity, and daily-use refinement
+- Advanced keyboard mastery and workflow-specific drill packs beyond the core lesson ladder
 
 ## Phase 7: Polish And Stability
 
@@ -306,7 +307,7 @@ Phase 7 status:
 
 ### Advanced Keyboard Mastery
 
-- [ ] Add shortcut training
+- [x] Add shortcut training
 - [ ] Add navigation-key drills
 - [ ] Add workflow-specific drill packs
 - [ ] Add VR-oriented keyboard control practice concepts

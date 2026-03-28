@@ -21,13 +21,19 @@ const navigationItems = [
     shortcutCode: "Digit4",
     shortcutLabel: "Alt+Shift+4",
   },
-  { to: "/coding", label: "Coding", shortcutCode: "Digit5", shortcutLabel: "Alt+Shift+5" },
-  { to: "/stats", label: "Stats", shortcutCode: "Digit6", shortcutLabel: "Alt+Shift+6" },
+  {
+    to: "/practice/shortcuts",
+    label: "Shortcuts",
+    shortcutCode: "Digit5",
+    shortcutLabel: "Alt+Shift+5",
+  },
+  { to: "/coding", label: "Coding", shortcutCode: "Digit6", shortcutLabel: "Alt+Shift+6" },
+  { to: "/stats", label: "Stats", shortcutCode: "Digit7", shortcutLabel: "Alt+Shift+7" },
   {
     to: "/settings",
     label: "Settings",
-    shortcutCode: "Digit7",
-    shortcutLabel: "Alt+Shift+7",
+    shortcutCode: "Digit8",
+    shortcutLabel: "Alt+Shift+8",
   },
 ];
 
@@ -143,7 +149,7 @@ export function AppShell() {
               <span>Leave a typing capture surface</span>
             </li>
             <li>
-              <kbd>Alt+Shift+1-7</kbd>
+              <kbd>Alt+Shift+1-8</kbd>
               <span>Jump directly between main pages</span>
             </li>
           </ul>

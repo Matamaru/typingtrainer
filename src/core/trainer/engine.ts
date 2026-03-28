@@ -96,6 +96,44 @@ function strictnessAllowsBackspace(strictness: PracticeStrictness) {
   return strictness !== "strict";
 }
 
+function isWordBackspaceStroke(keystroke: KeystrokeEvent) {
+  return keystroke.key === "Backspace" && !keystroke.metaKey && (keystroke.ctrlKey || keystroke.altKey);
+}
+
+function isChunkBoundaryCharacter(character: string) {
+  return /\s/u.test(character) || /[.,;:!?()[\]{}<>/\\|+\-*='"`~@#$%^&]/u.test(character);
+}
+
+function getChunkBackspaceCursorIndex(input: string) {
+  let index = input.length;
+
+  while (index > 0 && /\s/u.test(input[index - 1] ?? "")) {
+    index -= 1;
+  }
+
+  if (index === 0) {
+    return 0;
+  }
+
+  if (isChunkBoundaryCharacter(input[index - 1] ?? "")) {
+    while (
+      index > 0 &&
+      isChunkBoundaryCharacter(input[index - 1] ?? "") &&
+      !/\s/u.test(input[index - 1] ?? "")
+    ) {
+      index -= 1;
+    }
+
+    return index;
+  }
+
+  while (index > 0 && !isChunkBoundaryCharacter(input[index - 1] ?? "")) {
+    index -= 1;
+  }
+
+  return index;
+}
+
 function shouldEnforceStrictShift(
   lesson: Lesson,
   strictness: PracticeStrictness,
@@ -364,15 +402,21 @@ export function processLessonKeystroke(
       };
     }
 
+    const nextCursorIndex = isWordBackspaceStroke(incomingKeystroke)
+      ? getChunkBackspaceCursorIndex(state.currentPromptInput)
+      : Math.max(state.cursorIndex - 1, 0);
+
     return {
       ...baseState,
       rawKeydownCount,
       backspaceCount: state.backspaceCount + 1,
-      cursorIndex: Math.max(state.cursorIndex - 1, 0),
-      currentPromptInput: state.currentPromptInput.slice(0, -1),
+      cursorIndex: nextCursorIndex,
+      currentPromptInput: state.currentPromptInput.slice(0, nextCursorIndex),
       lastFeedback: {
         tone: "neutral",
-        message: "Backspace moved the cursor back by one character.",
+        message: isWordBackspaceStroke(incomingKeystroke)
+          ? "Chunk delete moved back to the previous space or symbol boundary."
+          : "Backspace moved the cursor back by one character.",
       },
     };
   }

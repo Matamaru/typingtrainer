@@ -143,6 +143,78 @@ export const englishCapitalizationLesson: Lesson = {
   ],
 };
 
+export const englishSymbolLesson: Lesson = {
+  id: "en-symbol-ladders",
+  title: "Symbol Ladders",
+  summary: "Train number-row and operator symbols as deliberate reach patterns.",
+  mode: "guided",
+  kind: "technique",
+  stage: 3,
+  sequence: 2,
+  prerequisiteLessonIds: ["en-capitalization-ladders"],
+  locale: "en",
+  estimatedMinutes: 9,
+  tags: ["symbols", "operators", "shift"],
+  goals: [
+    "Train number-row symbols as mapped reaches instead of random guesses.",
+    "Build calm control around operator pairs like `_` and `+`, or `!` and `=`.",
+    "Keep shift-side technique deliberate while symbol density increases.",
+  ],
+  prompts: [
+    {
+      id: "sym-1",
+      text: "! @ # $ % ^ & * ( )",
+      notes: "Slow down and treat each symbol as a physical key reach, not as a visual blur.",
+    },
+    {
+      id: "sym-2",
+      text: "_ + == != <= >=",
+      notes: "Operator pairs should feel like repeatable shapes, not panic typing.",
+    },
+    {
+      id: "sym-3",
+      text: "total_cost += 1; user_id != 0",
+      notes: "Mix symbols with readable code-like text so the pattern stays meaningful.",
+    },
+  ],
+};
+
+export const englishEdgeSymbolLesson: Lesson = {
+  id: "en-edge-symbols",
+  title: "Edge Symbols",
+  summary: "Train backtick, tilde, backslash, and pipe as calm pinky-led reaches.",
+  mode: "guided",
+  kind: "technique",
+  stage: 3,
+  sequence: 3,
+  prerequisiteLessonIds: ["en-symbol-ladders"],
+  locale: "en",
+  estimatedMinutes: 8,
+  tags: ["symbols", "pinky", "operators"],
+  goals: [
+    "Build trust in the far-edge symbol keys without looking down.",
+    "Treat ` ~ \\ | as deliberate shapes instead of emergency reaches.",
+    "Keep the left and right pinkies relaxed while symbol density rises.",
+  ],
+  prompts: [
+    {
+      id: "edge-1",
+      text: "` ~ \\ |",
+      notes: "Hit each edge symbol slowly and let the fingers return home between reps.",
+    },
+    {
+      id: "edge-2",
+      text: "path\\to\\file | log\\trace",
+      notes: "Backslashes and pipes should feel like mapped reaches, not a search.",
+    },
+    {
+      id: "edge-3",
+      text: "`cache_key` | ~ready_mask",
+      notes: "Mix edge symbols with readable code-like text so the pattern stays meaningful.",
+    },
+  ],
+};
+
 export const englishPunctuationLesson: Lesson = {
   id: "en-punctuation-and-brackets",
   title: "Punctuation And Brackets",
@@ -150,8 +222,8 @@ export const englishPunctuationLesson: Lesson = {
   mode: "guided",
   kind: "technique",
   stage: 3,
-  sequence: 2,
-  prerequisiteLessonIds: ["en-capitalization-ladders"],
+  sequence: 4,
+  prerequisiteLessonIds: ["en-edge-symbols"],
   locale: "en",
   estimatedMinutes: 9,
   tags: ["punctuation", "brackets", "symbols"],
@@ -174,7 +246,7 @@ export const englishModifierLesson: Lesson = {
   mode: "guided",
   kind: "technique",
   stage: 3,
-  sequence: 3,
+  sequence: 5,
   prerequisiteLessonIds: ["en-punctuation-and-brackets"],
   locale: "en",
   estimatedMinutes: 8,
@@ -212,5 +284,45 @@ export const englishProseLesson: Lesson = {
     { id: "prose-1", text: "steady practice builds control long before it builds speed." },
     { id: "prose-2", text: "the goal is to trust the keyboard without looking down." },
     { id: "prose-3", text: "calm repetition turns key positions into muscle memory." },
+  ],
+};
+
+export const englishCorrectionLesson: Lesson = {
+  id: "en-correction-control",
+  title: "Correction Control",
+  summary: "Train calm error recovery with Backspace and chunk-delete correction.",
+  mode: "guided",
+  kind: "technique",
+  preferredStrictness: "guided",
+  stage: 4,
+  sequence: 2,
+  prerequisiteLessonIds: ["en-calm-prose-carryover"],
+  locale: "en",
+  estimatedMinutes: 8,
+  tags: ["correction", "backspace", "editing"],
+  goals: [
+    "Use single Backspace for immediate single-character fixes.",
+    "Use Ctrl+Backspace or Alt+Backspace to remove the last chunk cleanly.",
+    "Retype calmly from the last space or punctuation boundary instead of pecking backward.",
+  ],
+  prompts: [
+    {
+      id: "corr-1",
+      text: "steady correction keeps the typing rhythm clean.",
+      notes:
+        "In guided mode, intentionally mistype the last word once, then use Ctrl+Backspace or Alt+Backspace to clear the chunk and retype it cleanly.",
+    },
+    {
+      id: "corr-2",
+      text: "delete the broken word, then restart from the last space.",
+      notes:
+        "Practice chunk recovery: let one word break, remove it in one correction chord, then continue without looking down.",
+    },
+    {
+      id: "corr-3",
+      text: "path\\trace_error | retry_count += 1",
+      notes:
+        "Use Backspace for a tiny slip, or Ctrl+Backspace / Alt+Backspace to clear the whole last token back to the punctuation boundary.",
+    },
   ],
 };
