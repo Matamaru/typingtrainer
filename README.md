@@ -31,6 +31,10 @@ Primary docs:
 - [ROADMAP.md](./ROADMAP.md)
 - [CHANGELOG.md](./CHANGELOG.md)
 - [AGENTS.md](./AGENTS.md)
+- [PUBLIC_ROADMAP.md](./PUBLIC_ROADMAP.md)
+- [DEPLOYMENT_PLAN.md](./DEPLOYMENT_PLAN.md)
+- [MONETIZATION_PLAN.md](./MONETIZATION_PLAN.md)
+- [NEXT_STEPS.md](./NEXT_STEPS.md)
 
 ## Getting Started
 
