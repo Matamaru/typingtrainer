@@ -1,0 +1,9 @@
+{
+  "name": "typingtrainer",
+  "short_name": "typingtrainer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3e7c9",
+  "theme_color": "#0f2b36",
+  "description": "A local-first browser typing trainer for disciplined QWERTY practice."
+}
