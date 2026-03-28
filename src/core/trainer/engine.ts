@@ -1,9 +1,17 @@
 import {
+  areQwertyCodesNeighboring,
   getExpectedShiftSideForCharacter,
   getFingerZoneForCode,
+  getHandForCode,
+  getDisplayLabelForCode,
+  getQwertyDescriptorForCharacter,
   usesAcronymException,
 } from "../keyboard/qwerty";
 import type {
+  FingerZone,
+  FingerZoneCount,
+  KeyCount,
+  KeySubstitutionCount,
   KeystrokeEvent,
   Lesson,
   MistakeType,
@@ -16,6 +24,8 @@ import type {
 } from "../../shared/types/domain";
 
 type FeedbackTone = "neutral" | "success" | "warning" | "error";
+
+const TIMING_HESITATION_THRESHOLD_MS = 1500;
 
 export type LessonRunState = {
   profileId: string;
@@ -57,7 +67,12 @@ function createSession(lesson: Lesson, strictness: PracticeStrictness): Session 
 }
 
 function isModifierStroke(keystroke: KeystrokeEvent) {
-  return keystroke.code.startsWith("Shift") || keystroke.code.startsWith("Alt") || keystroke.code.startsWith("Control") || keystroke.code.startsWith("Meta");
+  return (
+    keystroke.code.startsWith("Shift") ||
+    keystroke.code.startsWith("Alt") ||
+    keystroke.code.startsWith("Control") ||
+    keystroke.code.startsWith("Meta")
+  );
 }
 
 function normalizeScoredInput(keystroke: KeystrokeEvent) {
@@ -114,8 +129,11 @@ function buildMistake(
   charIndex: number,
   expected: string | null,
   type: MistakeType,
+  tags: MistakeType[] = [],
   expectedShiftSide?: ModifierSide,
 ): SessionMistake {
+  const expectedDescriptor = expected ? getQwertyDescriptorForCharacter(expected) : undefined;
+
   return {
     id: `${promptId}-${charIndex}-${keystroke.timestamp}-${type}`,
     promptId,
@@ -127,17 +145,102 @@ function buildMistake(
     key: keystroke.key,
     code: keystroke.code,
     type,
+    tags,
     shiftSide: keystroke.shiftSide,
     expectedShiftSide,
-    fingerZone: getFingerZoneForCode(keystroke.code),
+    expectedCode: expectedDescriptor?.code,
+    expectedFingerZone: expectedDescriptor?.fingerZone,
+    actualFingerZone: getFingerZoneForCode(keystroke.code),
   };
 }
 
-function topEntries<T extends string>(counts: Map<T, number>, limit: number) {
+function incrementCount<T extends string>(counts: Map<T, number>, entry: T | undefined) {
+  if (!entry) {
+    return;
+  }
+
+  counts.set(entry, (counts.get(entry) ?? 0) + 1);
+}
+
+function mapToKeyCounts(counts: Map<string, number>): KeyCount[] {
   return [...counts.entries()]
     .sort((left, right) => right[1] - left[1])
-    .slice(0, limit)
-    .map(([entry]) => entry);
+    .map(([code, count]) => ({
+      code,
+      label: getDisplayLabelForCode(code),
+      count,
+    }));
+}
+
+function mapToFingerZoneCounts(counts: Map<FingerZone, number>): FingerZoneCount[] {
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([fingerZone, count]) => ({
+      fingerZone,
+      count,
+    }));
+}
+
+function mapToSubstitutionCounts(counts: Map<string, { expectedCode: string; actualCode: string; count: number }>): KeySubstitutionCount[] {
+  return [...counts.values()]
+    .sort((left, right) => right.count - left.count)
+    .map((entry) => ({
+      expectedCode: entry.expectedCode,
+      expectedLabel: getDisplayLabelForCode(entry.expectedCode),
+      actualCode: entry.actualCode,
+      actualLabel: getDisplayLabelForCode(entry.actualCode),
+      count: entry.count,
+    }));
+}
+
+function detectLikelyWrongFinger(expectedCharacter: string, keystroke: KeystrokeEvent) {
+  const expectedDescriptor = getQwertyDescriptorForCharacter(expectedCharacter);
+  const actualFingerZone = getFingerZoneForCode(keystroke.code);
+  const actualHand = getHandForCode(keystroke.code);
+
+  if (!expectedDescriptor || !actualFingerZone || !actualHand) {
+    return false;
+  }
+
+  if (expectedDescriptor.code === keystroke.code) {
+    return false;
+  }
+
+  if (expectedDescriptor.hand !== actualHand) {
+    return false;
+  }
+
+  if (expectedDescriptor.fingerZone === actualFingerZone) {
+    return false;
+  }
+
+  return areQwertyCodesNeighboring(expectedDescriptor.code, keystroke.code);
+}
+
+function getLastScoredKeydown(keystrokes: KeystrokeEvent[]) {
+  for (let index = keystrokes.length - 1; index >= 0; index -= 1) {
+    const keystroke = keystrokes[index];
+
+    if (keystroke?.phase === "keydown" && keystroke.expected) {
+      return keystroke;
+    }
+  }
+
+  return null;
+}
+
+function detectTimingHesitation(state: LessonRunState, incomingKeystroke: KeystrokeEvent) {
+  if (state.cursorIndex === 0) {
+    return false;
+  }
+
+  const lastScoredKeydown = getLastScoredKeydown(state.session.keystrokes);
+
+  if (!lastScoredKeydown) {
+    return false;
+  }
+
+  return incomingKeystroke.timestamp - lastScoredKeydown.timestamp >= TIMING_HESITATION_THRESHOLD_MS;
 }
 
 export function createLessonRunState(
@@ -329,6 +432,11 @@ export function processLessonKeystroke(
     state.session.strictness === "strict"
       ? fullyCorrect || (keyMatches && shiftMismatch && !strictlyBlockShift)
       : true;
+  const mistakeTags =
+    !keyMatches && detectLikelyWrongFinger(expectedCharacter, incomingKeystroke)
+      ? (["likely-wrong-finger"] as MistakeType[])
+      : [];
+  const timingHesitation = detectTimingHesitation(state, incomingKeystroke);
   const mistakeType: MistakeType | undefined = !keyMatches
     ? "wrong-key"
     : shiftMismatch
@@ -340,23 +448,38 @@ export function processLessonKeystroke(
     expected: expectedCharacter,
     isCorrect: fullyCorrect,
     errorType: mistakeType,
+    errorTags: timingHesitation ? [...mistakeTags, "timing-hesitation"] : mistakeTags,
   });
 
-  const mistakes =
-    mistakeType === undefined
-      ? state.mistakes
-      : [
-          ...state.mistakes,
-          buildMistake(
-            incomingKeystroke,
-            promptId,
-            state.promptIndex,
-            state.cursorIndex,
-            expectedCharacter,
-            mistakeType,
-            expectedShiftSide ?? undefined,
-          ),
-        ];
+  const mistakes = [...state.mistakes];
+
+  if (mistakeType !== undefined) {
+    mistakes.push(
+      buildMistake(
+        incomingKeystroke,
+        promptId,
+        state.promptIndex,
+        state.cursorIndex,
+        expectedCharacter,
+        mistakeType,
+        mistakeTags,
+        expectedShiftSide ?? undefined,
+      ),
+    );
+  }
+
+  if (timingHesitation) {
+    mistakes.push(
+      buildMistake(
+        incomingKeystroke,
+        promptId,
+        state.promptIndex,
+        state.cursorIndex,
+        expectedCharacter,
+        "timing-hesitation",
+      ),
+    );
+  }
 
   const nextScoredKeystrokes = state.scoredKeystrokes + 1;
   const nextCorrectKeystrokes = state.correctKeystrokes + (fullyCorrect ? 1 : 0);
@@ -376,24 +499,37 @@ export function processLessonKeystroke(
       currentPromptInput: nextPromptInput,
       mistakes,
       lastFeedback: fullyCorrect
-        ? {
-            tone: "success",
-            message: "Clean keystroke. Keep the rhythm steady.",
-          }
+        ? timingHesitation
+          ? {
+              tone: "warning",
+              message: `Correct key, but the pause before "${expectedCharacter}" was long. Keep the rhythm steadier.`,
+            }
+          : {
+              tone: "success",
+              message: "Clean keystroke. Keep the rhythm steady.",
+            }
         : shiftMismatch
           ? {
               tone: strictlyBlockShift ? "error" : "warning",
               message: strictlyBlockShift
                 ? `Use ${expectedShiftSide} Shift for this character in strict technique mode.`
-                : `Shift-side technique is off. The character was accepted but logged.`,
+                : "Shift-side technique is off. The character was accepted but logged.",
             }
-          : {
-              tone: state.session.strictness === "strict" ? "error" : "warning",
-              message:
-                state.session.strictness === "strict"
-                  ? `Expected "${expectedCharacter}" before moving on.`
-                  : `Expected "${expectedCharacter}" but logged "${actualText}".`,
-            },
+          : mistakeTags.includes("likely-wrong-finger")
+            ? {
+                tone: state.session.strictness === "strict" ? "error" : "warning",
+                message:
+                  state.session.strictness === "strict"
+                    ? `Expected "${expectedCharacter}". The miss looks like adjacent finger drift.`
+                    : `Expected "${expectedCharacter}". Logged the miss and tagged it as likely finger drift.`,
+              }
+            : {
+                tone: state.session.strictness === "strict" ? "error" : "warning",
+                message:
+                  state.session.strictness === "strict"
+                    ? `Expected "${expectedCharacter}" before moving on.`
+                    : `Expected "${expectedCharacter}" but logged "${actualText}".`,
+              },
     };
   }
 
@@ -451,20 +587,63 @@ export function buildSessionSummary(state: LessonRunState): SessionSummary | nul
   }
 
   const mistakeCounts = new Map<MistakeType, number>();
-  const weakKeyCounts = new Map<string, number>();
-  const weakFingerZoneCounts = new Map<NonNullable<SessionMistake["fingerZone"]>, number>();
+  const expectedKeyCounts = new Map<string, number>();
+  const mistakeKeyCounts = new Map<string, number>();
+  const expectedFingerZoneCounts = new Map<FingerZone, number>();
+  const mistakeFingerZoneCounts = new Map<FingerZone, number>();
+  const hesitationKeyCounts = new Map<string, number>();
+  const hesitationFingerZoneCounts = new Map<FingerZone, number>();
+  const substitutionCounts = new Map<
+    string,
+    { expectedCode: string; actualCode: string; count: number }
+  >();
+
+  for (const keystroke of state.session.keystrokes) {
+    if (keystroke.phase !== "keydown" || !keystroke.expected) {
+      continue;
+    }
+
+    const expectedDescriptor = getQwertyDescriptorForCharacter(keystroke.expected);
+
+    incrementCount(expectedKeyCounts, expectedDescriptor?.code);
+    incrementCount(expectedFingerZoneCounts, expectedDescriptor?.fingerZone);
+  }
 
   for (const mistake of state.mistakes) {
-    mistakeCounts.set(mistake.type, (mistakeCounts.get(mistake.type) ?? 0) + 1);
-    weakKeyCounts.set(mistake.code, (weakKeyCounts.get(mistake.code) ?? 0) + 1);
+    const countedTypes = new Set([mistake.type, ...(mistake.tags ?? [])]);
 
-    if (mistake.fingerZone) {
-      weakFingerZoneCounts.set(
-        mistake.fingerZone,
-        (weakFingerZoneCounts.get(mistake.fingerZone) ?? 0) + 1,
-      );
+    for (const countedType of countedTypes) {
+      incrementCount(mistakeCounts, countedType);
+    }
+
+    if (mistake.type === "timing-hesitation") {
+      incrementCount(hesitationKeyCounts, mistake.expectedCode);
+      incrementCount(hesitationFingerZoneCounts, mistake.expectedFingerZone);
+      continue;
+    }
+
+    incrementCount(mistakeKeyCounts, mistake.expectedCode);
+    incrementCount(mistakeFingerZoneCounts, mistake.expectedFingerZone);
+
+    if (mistake.expectedCode && mistake.code && mistake.expectedCode !== mistake.code) {
+      const key = `${mistake.expectedCode}->${mistake.code}`;
+      const current = substitutionCounts.get(key);
+
+      substitutionCounts.set(key, {
+        expectedCode: mistake.expectedCode,
+        actualCode: mistake.code,
+        count: (current?.count ?? 0) + 1,
+      });
     }
   }
+
+  const expectedKeyCountList = mapToKeyCounts(expectedKeyCounts);
+  const mistakeKeyCountList = mapToKeyCounts(mistakeKeyCounts);
+  const expectedFingerZoneCountList = mapToFingerZoneCounts(expectedFingerZoneCounts);
+  const mistakeFingerZoneCountList = mapToFingerZoneCounts(mistakeFingerZoneCounts);
+  const hesitationKeyCountList = mapToKeyCounts(hesitationKeyCounts);
+  const hesitationFingerZoneCountList = mapToFingerZoneCounts(hesitationFingerZoneCounts);
+  const substitutionCountList = mapToSubstitutionCounts(substitutionCounts);
 
   return {
     id: state.session.id,
@@ -482,8 +661,17 @@ export function buildSessionSummary(state: LessonRunState): SessionSummary | nul
     backspaceCount: state.backspaceCount,
     accuracy: getAccuracyPercent(state),
     shiftSideErrors: mistakeCounts.get("wrong-shift-side") ?? 0,
+    likelyWrongFingerCount: mistakeCounts.get("likely-wrong-finger") ?? 0,
+    timingHesitationCount: mistakeCounts.get("timing-hesitation") ?? 0,
     mistakeCounts: Object.fromEntries(mistakeCounts),
-    weakKeys: topEntries(weakKeyCounts, 5),
-    weakFingerZones: topEntries(weakFingerZoneCounts, 5),
+    expectedKeyCounts: expectedKeyCountList,
+    mistakeKeyCounts: mistakeKeyCountList,
+    expectedFingerZoneCounts: expectedFingerZoneCountList,
+    mistakeFingerZoneCounts: mistakeFingerZoneCountList,
+    hesitationKeyCounts: hesitationKeyCountList,
+    hesitationFingerZoneCounts: hesitationFingerZoneCountList,
+    substitutionCounts: substitutionCountList,
+    weakKeys: mistakeKeyCountList.slice(0, 5),
+    weakFingerZones: mistakeFingerZoneCountList.slice(0, 5),
   };
 }

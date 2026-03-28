@@ -3,24 +3,91 @@ import { micropythonPinsLesson } from "../../content/code/micropython/pins";
 import { pythonFunctionFlowLesson } from "../../content/code/python/function-drills";
 import { germanAccuracyLesson } from "../../content/lessons/de/accuracy";
 import {
+  englishBottomRowLesson,
   englishCapitalizationLesson,
+  englishFingerMapLesson,
   englishHomeRowLesson,
+  englishModifierLesson,
+  englishNumberRowLesson,
+  englishProseLesson,
+  englishPunctuationLesson,
+  englishTopRowLesson,
 } from "../../content/lessons/en/foundations";
 import type { Lesson } from "../../shared/types/domain";
 
+export const guidedLessonStages = [
+  {
+    stage: 1,
+    title: "Stage 1: Home Row Stability",
+    description: "Lock in home-row anchors and finger identity before reaching wider.",
+  },
+  {
+    stage: 2,
+    title: "Stage 2: Reach Expansion",
+    description: "Expand to top row, bottom row, and the number row without losing the return path.",
+  },
+  {
+    stage: 3,
+    title: "Stage 3: Capitals And Symbols",
+    description: "Build disciplined Shift use, punctuation control, and modifier confidence.",
+  },
+  {
+    stage: 4,
+    title: "Stage 4: Prose Carryover",
+    description: "Carry drill mechanics into English first, then German prose support.",
+  },
+] as const;
+
+function sortLessonCatalog(left: Lesson, right: Lesson) {
+  const leftStage = left.stage ?? Number.MAX_SAFE_INTEGER;
+  const rightStage = right.stage ?? Number.MAX_SAFE_INTEGER;
+
+  if (leftStage !== rightStage) {
+    return leftStage - rightStage;
+  }
+
+  const leftSequence = left.sequence ?? Number.MAX_SAFE_INTEGER;
+  const rightSequence = right.sequence ?? Number.MAX_SAFE_INTEGER;
+
+  if (leftSequence !== rightSequence) {
+    return leftSequence - rightSequence;
+  }
+
+  return left.title.localeCompare(right.title);
+}
+
 export const lessonCatalog: Lesson[] = [
   englishHomeRowLesson,
+  englishFingerMapLesson,
+  englishTopRowLesson,
+  englishBottomRowLesson,
+  englishNumberRowLesson,
   englishCapitalizationLesson,
+  englishPunctuationLesson,
+  englishModifierLesson,
+  englishProseLesson,
   germanAccuracyLesson,
   pythonFunctionFlowLesson,
   micropythonPinsLesson,
   cRegisterRhythmLesson,
-];
+].sort(sortLessonCatalog);
 
 export function getLessonById(lessonId: string) {
   return lessonCatalog.find((lesson) => lesson.id === lessonId);
 }
 
+export function getGuidedLessons() {
+  return lessonCatalog.filter((lesson) => lesson.mode === "guided");
+}
+
 export function getCodingLessons() {
   return lessonCatalog.filter((lesson) => lesson.kind === "code");
+}
+
+export function getLessonsForStage(stage: number) {
+  return getGuidedLessons().filter((lesson) => lesson.stage === stage);
+}
+
+export function isLessonUnlocked(lesson: Lesson, completedLessonIds: Set<string>) {
+  return (lesson.prerequisiteLessonIds ?? []).every((lessonId) => completedLessonIds.has(lessonId));
 }

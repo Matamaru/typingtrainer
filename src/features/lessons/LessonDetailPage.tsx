@@ -17,6 +17,7 @@ import {
 } from "../../core/trainer/engine";
 import { saveSessionSummary } from "../../core/storage/session-summaries";
 import type { SessionSummary } from "../../shared/types/domain";
+import { KeyboardCaptureSurface } from "../../shared/ui/KeyboardCaptureSurface";
 import { PageSection } from "../../shared/ui/PageSection";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -49,7 +50,7 @@ export function LessonDetailPage() {
   const { lessonId = "" } = useParams();
   const lesson = getLessonById(lessonId);
   const profile = useAppStore((state) => state.activeProfile);
-  const captureSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const captureSurfaceRef = useRef<HTMLTextAreaElement | null>(null);
   const captureEngineRef = useRef(new KeyboardCaptureEngine());
   const [runState, setRunState] = useState<LessonRunState | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -111,7 +112,7 @@ export function LessonDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [runState, saveState]);
+  }, [runState]);
 
   const summary = useMemo(() => (runState ? buildSessionSummary(runState) : null), [runState]);
 
@@ -125,7 +126,7 @@ export function LessonDetailPage() {
     setSaveState("idle");
   }
 
-  function handleLessonKeyEvent(event: React.KeyboardEvent<HTMLDivElement>) {
+  function handleLessonKeyEvent(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     event.preventDefault();
 
     if (!runState) {
@@ -215,10 +216,11 @@ export function LessonDetailPage() {
           input is intentionally ignored. In strict mode, wrong keys do not advance the cursor.
         </p>
 
-        <div
+        <KeyboardCaptureSurface
           ref={captureSurfaceRef}
+          ariaLabel="Lesson typing capture"
+          autoFocus
           className="capture-surface lesson-surface"
-          tabIndex={0}
           onKeyDown={handleLessonKeyEvent}
           onKeyUp={handleLessonKeyEvent}
         >
@@ -229,7 +231,7 @@ export function LessonDetailPage() {
           <p className="lesson-helper">
             Focus this panel and type the prompt. Backspace is only enabled outside strict mode.
           </p>
-        </div>
+        </KeyboardCaptureSurface>
 
         <div className={`feedback-banner feedback-banner--${runState.lastFeedback.tone}`}>
           {runState.lastFeedback.message}
@@ -282,9 +284,9 @@ export function LessonDetailPage() {
                 keystrokes in {formatDuration(summary.durationMs)}.
               </p>
               <div className="pill-row">
-                {summary.weakKeys.map((key) => (
-                  <span key={key} className="pill pill--soft">
-                    {key}
+                {summary.weakKeys.map((entry) => (
+                  <span key={entry.code} className="pill pill--soft">
+                    {entry.label} x{entry.count}
                   </span>
                 ))}
               </div>
@@ -297,6 +299,19 @@ export function LessonDetailPage() {
               <p>
                 Shift-side errors: <strong>{summary.shiftSideErrors}</strong>
               </p>
+              <p>
+                Likely finger drift calls: <strong>{summary.likelyWrongFingerCount}</strong>
+              </p>
+              <p>
+                Timing hesitation calls: <strong>{summary.timingHesitationCount}</strong>
+              </p>
+              <div className="pill-row">
+                {summary.weakFingerZones.map((entry) => (
+                  <span key={entry.fingerZone} className="pill pill--soft">
+                    {entry.fingerZone} x{entry.count}
+                  </span>
+                ))}
+              </div>
             </article>
           </div>
         ) : (

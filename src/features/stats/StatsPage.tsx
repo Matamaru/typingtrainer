@@ -1,21 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAppStore } from "../../app/store/app-store";
+import {
+  buildSessionInsights,
+  type HeatmapEntry,
+} from "../../core/analysis/session-insights";
 import { listSessionSummaries } from "../../core/storage/session-summaries";
-import type { FingerZone, SessionSummary } from "../../shared/types/domain";
+import type { SessionSummary } from "../../shared/types/domain";
 import { PageSection } from "../../shared/ui/PageSection";
 
-function topCounts(entries: string[]) {
-  const counts = new Map<string, number>();
+function formatSessionDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
-  for (const entry of entries) {
-    counts.set(entry, (counts.get(entry) ?? 0) + 1);
+function buildHeatmapTone(entry: HeatmapEntry) {
+  if (entry.total === 0) {
+    return "heatmap-key heatmap-key--idle";
   }
 
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 5)
-    .map(([entry]) => entry);
+  if (entry.intensity >= 0.5) {
+    return "heatmap-key heatmap-key--hot";
+  }
+
+  if (entry.intensity >= 0.2) {
+    return "heatmap-key heatmap-key--warm";
+  }
+
+  return "heatmap-key heatmap-key--cool";
 }
 
 export function StatsPage() {
@@ -40,106 +56,192 @@ export function StatsPage() {
     };
   }, [profile?.id]);
 
-  const aggregate = useMemo(() => {
-    if (summaries.length === 0) {
-      return {
-        sessionsCompleted: 0,
-        scoredKeystrokes: 0,
-        averageAccuracy: 0,
-        weakKeys: [] as string[],
-        weakFingerZones: [] as FingerZone[],
-      };
+  const insights = useMemo(() => buildSessionInsights(summaries), [summaries]);
+
+  const heatmapRows = useMemo(() => {
+    const rows = new Map<number, HeatmapEntry[]>();
+
+    for (const entry of insights.heatmapEntries) {
+      const current = rows.get(entry.row) ?? [];
+      current.push(entry);
+      rows.set(entry.row, current);
     }
 
-    const totalAccuracy = summaries.reduce((sum, summary) => sum + summary.accuracy, 0);
-    const scoredKeystrokes = summaries.reduce(
-      (sum, summary) => sum + summary.scoredKeystrokes,
-      0,
-    );
-
-    return {
-      sessionsCompleted: summaries.length,
-      scoredKeystrokes,
-      averageAccuracy: totalAccuracy / summaries.length,
-      weakKeys: topCounts(summaries.flatMap((summary) => summary.weakKeys)),
-      weakFingerZones: topCounts(
-        summaries.flatMap((summary) => summary.weakFingerZones),
-      ) as FingerZone[],
-    };
-  }, [summaries]);
+    return [...rows.entries()].sort((left, right) => left[0] - right[0]);
+  }, [insights.heatmapEntries]);
 
   return (
     <div className="page-grid">
       <PageSection eyebrow="stats" title="Stored session summaries">
         <p>
-          This view now reads actual lesson summaries from IndexedDB. It is still a simple aggregate
-          layer, but the data is no longer placeholder-only.
+          This view now reads actual lesson summaries from IndexedDB and turns them into trend,
+          substitution, and keyboard heatmap views instead of flat counters alone.
         </p>
         <div className="metric-grid">
           <article className="metric-card">
             <span>Sessions completed</span>
-            <strong>{aggregate.sessionsCompleted}</strong>
+            <strong>{insights.sessionsCompleted}</strong>
           </article>
           <article className="metric-card">
             <span>Scored keystrokes</span>
-            <strong>{aggregate.scoredKeystrokes}</strong>
+            <strong>{insights.scoredKeystrokes}</strong>
           </article>
           <article className="metric-card">
             <span>Average accuracy</span>
-            <strong>{aggregate.averageAccuracy.toFixed(1)}%</strong>
+            <strong>{insights.averageAccuracy.toFixed(1)}%</strong>
+          </article>
+          <article className="metric-card">
+            <span>Shift-side errors</span>
+            <strong>{insights.shiftSideErrors}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Likely finger drift calls</span>
+            <strong>{insights.likelyWrongFingerCount}</strong>
+          </article>
+          <article className="metric-card">
+            <span>Timing hesitation calls</span>
+            <strong>{insights.timingHesitationCount}</strong>
           </article>
         </div>
       </PageSection>
 
-      <PageSection eyebrow="focus areas" title="Current weak spots">
+      <PageSection eyebrow="progress" title="Recent progress">
         <div className="card-grid">
-          <article className="lesson-card">
-            <h3>Weak keys</h3>
-            <div className="pill-row">
-              {aggregate.weakKeys.length > 0 ? (
-                aggregate.weakKeys.map((key) => (
-                  <span key={key} className="pill pill--soft">
-                    {key}
-                  </span>
-                ))
-              ) : (
-                <span className="pill">No lesson data yet</span>
-              )}
-            </div>
-          </article>
-          <article className="lesson-card">
-            <h3>Weak finger zones</h3>
-            <div className="pill-row">
-              {aggregate.weakFingerZones.length > 0 ? (
-                aggregate.weakFingerZones.map((zone) => (
-                  <span key={zone} className="pill pill--soft">
-                    {zone}
-                  </span>
-                ))
-              ) : (
-                <span className="pill">No lesson data yet</span>
-              )}
-            </div>
-          </article>
-        </div>
-      </PageSection>
-
-      <PageSection eyebrow="recent sessions" title="Latest completions">
-        <div className="card-grid">
-          {summaries.length > 0 ? (
-            summaries.slice(0, 4).map((summary) => (
-              <article key={summary.id} className="lesson-card">
-                <h3>{summary.lessonTitle}</h3>
+          {insights.recentProgress.length > 0 ? (
+            insights.recentProgress.map((entry) => (
+              <article key={entry.id} className="lesson-card">
+                <div className="lesson-card__header">
+                  <h3>{entry.lessonTitle}</h3>
+                  <span className="pill">{formatSessionDate(entry.completedAt)}</span>
+                </div>
+                <div className="progress-track" aria-hidden="true">
+                  <span style={{ width: `${Math.max(entry.accuracy, 4)}%` }} />
+                </div>
                 <p>
-                  {summary.accuracy.toFixed(1)}% accuracy, {summary.shiftSideErrors} shift-side
-                  errors, {summary.scoredKeystrokes} scored keystrokes.
+                  {entry.accuracy.toFixed(1)}% accuracy at {entry.wpm.toFixed(1)} WPM.
+                </p>
+                <p>
+                  {entry.shiftSideErrors} shift-side errors, {entry.likelyWrongFingerCount} likely
+                  finger drift calls, {entry.timingHesitationCount} timing hesitation calls.
                 </p>
               </article>
             ))
           ) : (
             <article className="lesson-card">
-              <h3>No completed sessions yet</h3>
-              <p>Finish a guided lesson to populate the local stats view.</p>
+              <h3>No progress data yet</h3>
+              <p>Finish a guided lesson to start building the session trend view.</p>
+            </article>
+          )}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="substitutions" title="Most common substitutions">
+        <div className="card-grid">
+          {insights.commonSubstitutions.length > 0 ? (
+            insights.commonSubstitutions.map((entry) => (
+              <article
+                key={`${entry.expectedCode}-${entry.actualCode}`}
+                className="lesson-card"
+              >
+                <h3>
+                  {entry.expectedLabel} -&gt; {entry.actualLabel}
+                </h3>
+                <p>
+                  Logged {entry.count} times. This is your most repeated expected-to-actual swap for
+                  those keys.
+                </p>
+              </article>
+            ))
+          ) : (
+            <article className="lesson-card">
+              <h3>No substitution pattern yet</h3>
+              <p>Once you repeat the same wrong-key swaps, they will show up here.</p>
+            </article>
+          )}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="timing" title="Timing hesitation hotspots">
+        <div className="card-grid">
+          {insights.hesitantKeys.length > 0 ? (
+            insights.hesitantKeys.map((entry) => (
+              <article key={entry.label} className="lesson-card">
+                <h3>{entry.label}</h3>
+                <p>
+                  Long pauses were logged {entry.count} times before this target key in completed
+                  sessions.
+                </p>
+              </article>
+            ))
+          ) : (
+            <article className="lesson-card">
+              <h3>No hesitation pattern yet</h3>
+              <p>Once you pause repeatedly before the same targets, they will show up here.</p>
+            </article>
+          )}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="keyboard map" title="Target-key heatmap">
+        <p>
+          Keys only heat up when they were expected in finished sessions. Idle keys simply have not
+          been trained enough yet.
+        </p>
+        <div className="keyboard-heatmap">
+          {heatmapRows.map(([row, entries]) => (
+            <div key={row} className="keyboard-row">
+              {entries.map((entry) => (
+                <article key={entry.code} className={buildHeatmapTone(entry)}>
+                  <strong>{entry.label}</strong>
+                  <span>
+                    {entry.accuracy === null
+                      ? "no data"
+                      : `${entry.accuracy.toFixed(0)}% / ${entry.total}`}
+                  </span>
+                </article>
+              ))}
+            </div>
+          ))}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="focus areas" title="Weakest target keys">
+        <div className="card-grid">
+          {insights.weakKeys.length > 0 ? (
+            insights.weakKeys.map((entry) => (
+              <article key={entry.label} className="lesson-card">
+                <h3>{entry.label}</h3>
+                <p>
+                  {entry.accuracy.toFixed(1)}% accuracy across {entry.total} expected hits with{" "}
+                  {entry.mistakes} logged misses.
+                </p>
+              </article>
+            ))
+          ) : (
+            <article className="lesson-card">
+              <h3>No key data yet</h3>
+              <p>Finish a guided lesson to compute target-key weakness.</p>
+            </article>
+          )}
+        </div>
+      </PageSection>
+
+      <PageSection eyebrow="finger map" title="Weakest target finger zones">
+        <div className="card-grid">
+          {insights.weakFingerZones.length > 0 ? (
+            insights.weakFingerZones.map((entry) => (
+              <article key={entry.label} className="lesson-card">
+                <h3>{entry.label}</h3>
+                <p>
+                  {entry.accuracy.toFixed(1)}% accuracy across {entry.total} expected hits with{" "}
+                  {entry.mistakes} logged misses.
+                </p>
+              </article>
+            ))
+          ) : (
+            <article className="lesson-card">
+              <h3>No finger-zone data yet</h3>
+              <p>Finish a guided lesson to compute target-finger weakness.</p>
             </article>
           )}
         </div>

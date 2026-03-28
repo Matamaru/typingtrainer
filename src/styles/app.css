@@ -193,6 +193,10 @@ body {
   padding: 1.1rem;
 }
 
+.lesson-card--locked {
+  opacity: 0.72;
+}
+
 .lesson-card h3 {
   margin: 0;
 }
@@ -240,6 +244,7 @@ body {
 }
 
 .capture-surface {
+  position: relative;
   padding: 1.4rem;
   outline: none;
   background:
@@ -247,11 +252,32 @@ body {
     var(--surface-strong);
 }
 
-.capture-surface:focus-visible {
+.capture-surface--focused {
   border-color: rgba(209, 121, 49, 0.64);
   box-shadow:
     var(--shadow),
     0 0 0 4px rgba(209, 121, 49, 0.16);
+}
+
+.capture-surface__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  outline: none;
+  opacity: 0;
+}
+
+.capture-surface__content {
+  position: relative;
+  z-index: 1;
 }
 
 .lesson-surface {
@@ -336,6 +362,70 @@ body {
   padding: 1rem;
   overflow-x: auto;
   background: var(--surface-strong);
+}
+
+.progress-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(15, 43, 54, 0.1);
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #e3a14b);
+}
+
+.keyboard-heatmap {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.keyboard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+  gap: 0.5rem;
+}
+
+.heatmap-key {
+  display: grid;
+  gap: 0.3rem;
+  min-height: 74px;
+  padding: 0.8rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
+  text-align: center;
+}
+
+.heatmap-key strong {
+  font-size: 0.95rem;
+}
+
+.heatmap-key span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.heatmap-key--idle {
+  opacity: 0.66;
+}
+
+.heatmap-key--cool {
+  border-color: rgba(47, 99, 90, 0.24);
+  background: rgba(47, 99, 90, 0.12);
+}
+
+.heatmap-key--warm {
+  border-color: rgba(209, 121, 49, 0.36);
+  background: rgba(209, 121, 49, 0.16);
+}
+
+.heatmap-key--hot {
+  border-color: rgba(154, 45, 37, 0.34);
+  background: rgba(154, 45, 37, 0.14);
 }
 
 .plain-list {

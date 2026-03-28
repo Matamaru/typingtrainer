@@ -25,6 +25,25 @@ export type MistakeType =
   | "likely-wrong-finger"
   | "delimiter-mismatch";
 
+export type KeyCount = {
+  code: string;
+  label: string;
+  count: number;
+};
+
+export type FingerZoneCount = {
+  fingerZone: FingerZone;
+  count: number;
+};
+
+export type KeySubstitutionCount = {
+  expectedCode: string;
+  expectedLabel: string;
+  actualCode: string;
+  actualLabel: string;
+  count: number;
+};
+
 export type ProfilePreferences = {
   strictness: PracticeStrictness;
   showFingerGuides: boolean;
@@ -51,6 +70,9 @@ export type Lesson = {
   summary: string;
   mode: PracticeMode;
   kind: LessonKind;
+  stage?: number;
+  sequence?: number;
+  prerequisiteLessonIds?: string[];
   goals: string[];
   prompts: Prompt[];
   tags: string[];
@@ -75,6 +97,7 @@ export type KeystrokeEvent = {
   repeat: boolean;
   isCorrect?: boolean;
   errorType?: MistakeType;
+  errorTags?: MistakeType[];
 };
 
 export type SessionMistake = {
@@ -88,9 +111,12 @@ export type SessionMistake = {
   key: string;
   code: string;
   type: MistakeType;
+  tags?: MistakeType[];
   shiftSide: ModifierSide;
   expectedShiftSide?: ModifierSide;
-  fingerZone?: FingerZone;
+  expectedCode?: string;
+  expectedFingerZone?: FingerZone;
+  actualFingerZone?: FingerZone;
 };
 
 export type Session = {
@@ -129,9 +155,18 @@ export type SessionSummary = {
   backspaceCount: number;
   accuracy: number;
   shiftSideErrors: number;
+  likelyWrongFingerCount: number;
+  timingHesitationCount: number;
   mistakeCounts: Partial<Record<MistakeType, number>>;
-  weakKeys: string[];
-  weakFingerZones: FingerZone[];
+  expectedKeyCounts: KeyCount[];
+  mistakeKeyCounts: KeyCount[];
+  expectedFingerZoneCounts: FingerZoneCount[];
+  mistakeFingerZoneCounts: FingerZoneCount[];
+  hesitationKeyCounts: KeyCount[];
+  hesitationFingerZoneCounts: FingerZoneCount[];
+  substitutionCounts: KeySubstitutionCount[];
+  weakKeys: KeyCount[];
+  weakFingerZones: FingerZoneCount[];
 };
 
 export type Recommendation = {

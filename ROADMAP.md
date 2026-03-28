@@ -133,8 +133,8 @@ Goal: make typing sessions functionally correct.
 - [x] Add strictness modes
 - [x] Implement technique-aware mistake classification
 - [x] Implement shift-side policy
-- [ ] Add likely wrong-finger detection heuristics
-- [ ] Add per-key and per-finger statistics beyond starter summaries
+- [x] Add likely wrong-finger detection heuristics
+- [x] Add per-key and per-finger statistics beyond starter summaries
 - [x] Add session summaries
 
 Concrete Phase 2 design rules:
@@ -155,6 +155,12 @@ Current Phase 2 vertical slice:
 - session summaries persist locally through Dexie
 - stats pages read real stored session data
 - shift-side mistakes are detected for strict technique prompts
+- neighboring-key drift can be tagged as likely wrong-finger usage
+- common substitutions are tracked from expected-to-actual key swaps
+- timing hesitation is tracked from long pauses within prompts
+- stats pages expose recent progress and a target-key heatmap
+- adaptive recommendations use stored session summaries and target-key/finger weakness
+- adaptive practice can generate and run short targeted sessions from recent summary data
 
 Exit criteria:
 
@@ -166,15 +172,16 @@ Exit criteria:
 
 Goal: create a very guided path for foundational touch typing.
 
-- [ ] Home-row lessons
-- [ ] Finger-to-key mapping lessons
-- [ ] Letter expansion lessons
-- [ ] Number-row lessons
-- [ ] Punctuation and bracket lessons
-- [ ] Capitalization lessons
-- [ ] Modifier lessons
-- [ ] English-first prose lessons
-- [ ] German prose support
+- [x] Home-row lessons
+- [x] Finger-to-key mapping lessons
+- [x] Letter expansion lessons
+- [x] Number-row lessons
+- [x] Punctuation and bracket lessons
+- [x] Capitalization lessons
+- [x] Modifier lessons
+- [x] English-first prose lessons
+- [x] German prose support
+- [ ] Wire finger-guide visibility into the lesson runner
 
 Exit criteria:
 
@@ -182,35 +189,46 @@ Exit criteria:
 - lesson difficulty increases in a controlled way
 - finger guidance can be shown or hidden
 
+Phase 3 status:
+
+- in progress
+- staged lesson ladder and prerequisite-based unlocking are implemented
+- finger-guide visibility still needs to be wired into the lesson runner
+
 ## Phase 4: Adaptive Training
 
 Goal: make the trainer respond to personal weakness patterns.
 
-- [ ] Analyze weak keys
-- [ ] Analyze weak fingers
-- [ ] Analyze common substitutions
-- [ ] Analyze timing hesitation patterns
-- [ ] Generate targeted adaptive drills from personal errors
-- [ ] Add lesson recommendations
-- [ ] Add progress-over-time views
-- [ ] Add heatmaps
+- [x] Analyze weak keys
+- [x] Analyze weak fingers
+- [x] Analyze common substitutions
+- [x] Analyze timing hesitation patterns
+- [x] Generate targeted adaptive drills from personal errors
+- [x] Add lesson recommendations
+- [x] Add progress-over-time views
+- [x] Add heatmaps
 
 Exit criteria:
 
 - the trainer can explain what the user is weak at
 - the next recommended drill changes based on actual history
+- the adaptive practice screen can launch a generated session from stored weakness data
+
+Phase 4 status:
+
+- complete
 
 ## Phase 5: Coding Teacher V1
 
 Goal: add code-shaped typing without losing the typing-first focus.
 
-- [ ] Add Python drill pack
-- [ ] Add MicroPython drill pack
-- [ ] Add C drill pack
-- [ ] Add symbol and delimiter drills
-- [ ] Add indentation drills
+- [x] Add Python drill pack
+- [x] Add MicroPython drill pack
+- [x] Add C drill pack
+- [x] Add symbol and delimiter drills
+- [x] Add indentation drills
 - [ ] Add identifier and naming drills
-- [ ] Add short realistic snippets
+- [x] Add short realistic snippets
 - [ ] Add small full functions/programs
 - [ ] Add light concept prompts
 - [ ] Add adaptive code drills based on syntax-related typing mistakes
