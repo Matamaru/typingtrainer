@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This document describes how `typingtrainer` should move from local/personal usage into a public deployment model.
+This document describes how `typingtrainer` could move from a local proof build into a public deployment model.
+
+`typingtrainer` is currently a proof project for `automated_company`, not the flagship company product. This plan is exploratory and should be used only if the public proof needs a real deployed surface.
 
 The plan favors:
 

@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This document defines how `typingtrainer` should make money without breaking its strongest product qualities.
+This document defines how `typingtrainer` could make money without breaking its strongest product qualities.
+
+`typingtrainer` is currently a proof project for `automated_company`, not the flagship company product. This plan is exploratory and does not change the current role of the repo as public proof rather than the main company direction.
 
 The core rule is simple:
 

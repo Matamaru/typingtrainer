@@ -2,11 +2,15 @@
 
 A local-first browser typing trainer focused on QWERTY touch typing, muscle memory, and full keyboard control.
 
-This project is being built first for personal use, but the goal is to make it clean and mature enough to share later.
+`typingtrainer` is an open-source proof project built inside the `automated_company` environment. It exists as concrete public proof of the kind of local-first product work and delivery quality `automated_company` can ship.
+
+`automated_company` remains the flagship company direction. `typingtrainer` should stay a narrow proof artifact, not a replacement flagship.
 
 ## Status
 
 Current release: `v0.3.1`
+License: `MIT`
+Public position: open-source proof project and build-in-public reference
 
 What is working now:
 
@@ -31,10 +35,17 @@ Primary docs:
 - [ROADMAP.md](./ROADMAP.md)
 - [CHANGELOG.md](./CHANGELOG.md)
 - [AGENTS.md](./AGENTS.md)
+- [GITHUB_PUBLISH_CHECKLIST.md](./GITHUB_PUBLISH_CHECKLIST.md)
 - [PUBLIC_ROADMAP.md](./PUBLIC_ROADMAP.md)
 - [DEPLOYMENT_PLAN.md](./DEPLOYMENT_PLAN.md)
 - [MONETIZATION_PLAN.md](./MONETIZATION_PLAN.md)
 - [NEXT_STEPS.md](./NEXT_STEPS.md)
+
+## Proof Project Context
+
+- `typingtrainer` is useful on its own, but it is being shared as a public proof project rather than a new company focus
+- the public repo is meant to provide inspectable proof, low-friction sharing, and stronger support for external articles and references
+- deployment, public roadmap, and monetization docs describe what a standalone path would require if it were pushed further; they do not replace `automated_company` as the flagship direction
 
 ## Getting Started
 
@@ -209,7 +220,7 @@ v1 is designed first for one user who is still building touch-typing discipline 
 - the user often falls back to looking at the keyboard
 - the user wants deep keyboard control for everyday writing, coding, and future VR-heavy workflows
 
-The trainer may later become shareable and more general-purpose.
+The trainer is intentionally narrow. Public development should improve the proof in the open, not turn it into a broad flagship product.
 
 ## Core Principles
 

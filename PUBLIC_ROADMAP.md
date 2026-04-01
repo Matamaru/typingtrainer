@@ -2,12 +2,14 @@
 
 ## Purpose
 
-This document turns `typingtrainer` from a strong personal/local-first v1 into a public product roadmap.
+This document turns `typingtrainer` from a strong local-first proof project into an exploratory public product roadmap.
+
+`typingtrainer` is currently an open-source proof project for `automated_company`, not the flagship company product. Treat this roadmap as the path required only if the proof is pushed further as a standalone public product.
 
 Current baseline:
 
 - app release: `v0.3.1`
-- status: strong private v1 for daily personal use
+- status: strong local-first proof build ready for public hardening
 - platform: browser-first, Firefox-first, local-first
 - core strength: technique-heavy keyboard mastery for prose, code, symbols, correction, and shortcuts
 

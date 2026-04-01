@@ -6,9 +6,11 @@ This file turns the broader public-product docs into a short execution checklist
 
 Use it as the practical build order for the next release cycle.
 
+`typingtrainer` remains a proof project for `automated_company`. Treat the steps below as the shortest path for improving the public proof, not as a commitment to make `typingtrainer` the company's flagship product.
+
 Current product state:
 
-- private/local-first v1 is already strong
+- local-first proof build is already strong
 - the next goal is public alpha readiness
 - the bottleneck is productization, not core typing mechanics
 
@@ -188,4 +190,4 @@ If you want one simple interpretation of this file:
 - then finish Sprint 2
 - then finish Sprint 3
 
-That is the shortest path from the current strong private v1 to a real public alpha product.
+That is the shortest path from the current strong proof build to a credible public alpha product if the proof is taken further.

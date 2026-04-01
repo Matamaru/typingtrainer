@@ -1,6 +1,8 @@
 {
   "name": "typingtrainer",
+  "description": "Open-source proof project from automated_company: a local-first browser typing trainer for disciplined QWERTY practice.",
   "version": "0.3.1",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
